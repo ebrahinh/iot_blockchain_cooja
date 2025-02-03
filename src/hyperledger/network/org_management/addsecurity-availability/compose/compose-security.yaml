@@ -1,0 +1,94 @@
+# Copyright IBM Corp. All Rights Reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+version: '3.7'
+
+volumes:
+  peer0.securityorg.example.com:
+  peer0.availabilityorg.example.com:
+
+networks:
+  test:
+    name: fabric_test
+
+services:
+
+  ### **🔹 SecurityOrg Peer**
+  peer0.securityorg.example.com:
+    container_name: peer0.securityorg.example.com
+    image: hyperledger/fabric-peer:latest
+    labels:
+      service: hyperledger-fabric
+    environment:
+      - FABRIC_CFG_PATH=/etc/hyperledger/peercfg
+      # Generic peer variables
+      - FABRIC_LOGGING_SPEC=INFO
+      #- FABRIC_LOGGING_SPEC=DEBUG
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_PROFILE_ENABLED=true
+      - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
+      - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+      # Peer specific variables
+      - CORE_PEER_ID=peer0.securityorg.example.com
+      - CORE_PEER_ADDRESS=peer0.securityorg.example.com:11051
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:11051
+      - CORE_PEER_CHAINCODEADDRESS=peer0.securityorg.example.com:11052
+      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:11052
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.securityorg.example.com:11051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.securityorg.example.com:11051
+      - CORE_PEER_LOCALMSPID=SecurityOrgMSP
+      - CORE_METRICS_PROVIDER=prometheus
+      - CHAINCODE_AS_A_SERVICE_BUILDER_CONFIG={"peername":"peer0securityorg"}
+      - CORE_CHAINCODE_EXECUTETIMEOUT=300s      
+    volumes:
+        - ../../organizations/peerOrganizations/securityorg.example.com/peers/peer0.securityorg.example.com:/etc/hyperledger/fabric        
+        - peer0.securityorg.example.com:/var/hyperledger/production
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
+    command: peer node start
+    ports:
+      - 11051:11051
+    networks:
+      - test
+
+  ### **🔹 AvailabilityOrg Peer**
+  peer0.availabilityorg.example.com:
+    container_name: peer0.availabilityorg.example.com
+    image: hyperledger/fabric-peer:latest
+    labels:
+      service: hyperledger-fabric
+    environment:
+      - FABRIC_CFG_PATH=/etc/hyperledger/peercfg
+      # Generic peer variables
+      - FABRIC_LOGGING_SPEC=INFO
+      #- FABRIC_LOGGING_SPEC=DEBUG
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_PROFILE_ENABLED=true
+      - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
+      - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+      # Peer specific variables
+      - CORE_PEER_ID=peer0.availabilityorg.example.com
+      - CORE_PEER_ADDRESS=peer0.availabilityorg.example.com:12051
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:12051
+      - CORE_PEER_CHAINCODEADDRESS=peer0.availabilityorg.example.com:12052
+      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:12052
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.availabilityorg.example.com:12051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.availabilityorg.example.com:12051
+      - CORE_PEER_LOCALMSPID=AvailabilityOrgMSP
+      - CORE_METRICS_PROVIDER=prometheus
+      - CHAINCODE_AS_A_SERVICE_BUILDER_CONFIG={"peername":"peer0availabilityorg"}
+      - CORE_CHAINCODE_EXECUTETIMEOUT=300s      
+    volumes:
+        - ../../organizations/peerOrganizations/availabilityorg.example.com/peers/peer0.availabilityorg.example.com:/etc/hyperledger/fabric        
+        - peer0.availabilityorg.example.com:/var/hyperledger/production
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
+    command: peer node start
+    ports:
+      - 12051:12051
+    networks:
+      - test

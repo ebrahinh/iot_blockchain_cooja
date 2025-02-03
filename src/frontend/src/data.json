@@ -1,0 +1,9 @@
+{
+  "cor": [
+    { "label": "Attempt 1", "success": 30, "failures": 10 },
+    { "label": "Attempt 2", "success": 50, "failures": 20 },
+    { "label": "Attempt 3", "success": 70, "failures": 15 },
+    { "label": "Attempt 4", "success": 85, "failures": 5 },
+    { "label": "Attempt 5", "success": 100, "failures": 0 }
+  ]
+}

@@ -1,0 +1,100 @@
+/* General Module Styling */
+#mod {
+  display: flex;
+  flex-direction: row;
+  overflow-x: scroll; /* Enable horizontal scrolling */
+  gap: 15px; /* Add spacing between children */
+  padding: 10px;
+  background-color: #f4f4f4; /* Light background for better contrast */
+}
+
+/* Dashboard Layout */
+.dashboard {
+  background-color: #f9f9f9;
+  color: #333333;
+  display: flex;
+  flex-direction: row;
+  overflow-x: auto; /* Horizontal scrolling only */
+  align-items: flex-start; /* Align items at the top */
+  padding: 15px;
+  gap: 20px;
+}
+
+/* Chart Container */
+.chart-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  align-items: center;
+  position: relative;
+  height: 85vh; /* Balanced height for all screens */
+  width: 70vw; /* Adjusted for responsive design */
+  margin: 20px auto; /* Center the container */
+  padding: 20px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+}
+
+/* No Scroll Areas */
+.no-scroll-required {
+  overflow: hidden; /* Hide overflow entirely */
+}
+
+/* Scroll Areas */
+.scroll-required {
+  overflow-y: auto; /* Vertical scrolling for content-heavy areas */
+  padding: 10px;
+  max-height: 70vh; /* Limit scroll height */
+  background-color: #f0f0f0;
+}
+
+/* Chart-Specific Styles */
+.scatter {
+  background-color: #212121; /* Darker tone for scatter charts */
+  border-radius: 10px;
+  padding: 15px;
+  color: #ffffff; /* Ensure text is readable */
+}
+
+.line {
+  background-color: #444444; /* Darker theme for line charts */
+  padding: 15px;
+  border-radius: 10px;
+  color: #ffffff;
+}
+
+/* Info Section */
+.info-container {
+  position: fixed;
+  bottom: 20px; /* Anchor to bottom of viewport */
+  right: 20px;
+  padding: 20px;
+  background-color: #e0e0e0;
+  color: #333333;
+  border-radius: 12px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+  max-width: 300px;
+  z-index: 1000;
+}
+
+/* For Small Screens */
+@media (max-width: 768px) {
+  #mod {
+    flex-direction: column;
+    overflow-y: auto; /* Adjust for smaller devices */
+    gap: 10px;
+  }
+
+  .chart-container {
+    width: 90vw;
+    height: auto;
+    margin: 10px;
+    padding: 15px;
+  }
+
+  .info-container {
+    position: static; /* Remove fixed positioning */
+    margin: 20px auto;
+  }
+}

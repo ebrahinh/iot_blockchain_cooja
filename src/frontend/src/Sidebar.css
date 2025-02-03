@@ -1,0 +1,128 @@
+/* Sidebar.css */
+.sidebar-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 250px;
+  background-color: #333;
+  color: #fff;
+  overflow-y: auto; /* Enables scrolling when content overflows */
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+}
+
+.sidebar-content {
+  padding: 20px;
+}
+
+.sidebar-header {
+  font-size: 1.5rem;
+  font-weight: bold;
+  padding: 15px 20px;
+  text-align: center;
+  background-color: #222;
+  border-bottom: 1px solid #444;
+}
+
+.sidebar-menu {
+  margin-top: 10px;
+}
+
+.sidebar-menu-item {
+  padding: 10px 20px;
+  font-size: 1rem;
+  color: #ccc;
+  text-decoration: none;
+  display: block;
+  border-radius: 5px;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.sidebar-menu-item:hover,
+.sidebar-menu-item.activeClicked {
+  background-color: #444;
+  color: #fff;
+}
+
+.sidebar-footer {
+  text-align: center;
+  font-size: 0.85rem;
+  color: #ccc;
+  padding: 20px;
+  border-top: 1px solid #444;
+}
+
+/* For the charts and dashboard layout */
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  margin-left: 250px; /* Push content to the right to account for sidebar */
+  height: 100vh;
+  overflow: hidden;
+  background-color: #f8f9fa;
+}
+
+.chart-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  height: 80vh;
+  width: calc(100vw - 270px); /* Adjust for sidebar width */
+  margin: 20px auto;
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 15px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.chart {
+  flex: 1;
+  width: 100%;
+  margin: 10px;
+}
+
+.info-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 20px;
+  background-color: #2a2a2a;
+  color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Media Queries for responsiveness */
+@media (max-width: 768px) {
+  .sidebar-container {
+    width: 200px;
+  }
+
+  .sidebar-menu-item {
+    font-size: 0.9rem;
+  }
+
+  .chart-container {
+    width: calc(100vw - 220px);
+    height: 70vh;
+  }
+}
+
+@media (max-width: 480px) {
+  .sidebar-container {
+    width: 180px;
+  }
+
+  .chart-container {
+    width: calc(100vw - 200px);
+    height: 60vh;
+  }
+
+  .sidebar-menu-item {
+    font-size: 0.8rem;
+    padding: 8px 15px;
+  }
+}

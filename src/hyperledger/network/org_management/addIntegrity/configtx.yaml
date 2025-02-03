@@ -1,0 +1,39 @@
+# Copyright IBM Corp. All Rights Reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+---
+################################################################################
+#
+#   Section: Organizations
+#
+#   - This section defines the different organizational identities which will
+#   be referenced later in the configuration.
+#
+################################################################################
+Organizations:
+    - &IntegrityOrg
+        # IntegrityOrg defines the organization which is used in the sample config
+        # of the fabric.git development environment
+        Name: IntegrityOrgMSP
+
+        # ID to load the MSP definition as
+        ID: IntegrityOrgMSP
+
+        MSPDir: ../organizations/peerOrganizations/integrity.example.com/msp
+
+        Policies:
+            Readers:
+                Type: Signature
+                Rule: "OR('IntegrityOrgMSP.admin', 'IntegrityOrgMSP.peer', 'IntegrityOrgMSP.client')"
+            Writers:
+                Type: Signature
+                Rule: "OR('IntegrityOrgMSP.admin', 'IntegrityOrgMSP.client')"
+            Admins:
+                Type: Signature
+                Rule: "OR('IntegrityOrgMSP.admin')"
+            Endorsement:
+                Type: Signature
+                Rule: "OR('IntegrityOrgMSP.peer')"
+
