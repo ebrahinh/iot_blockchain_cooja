@@ -1,165 +1,180 @@
 #!/bin/bash
 
-# IoT Security & Blockchain Deployment Script
-# Automates: Cooja IoT Simulation, Hyperledger Fabric, Backend, Frontend
+# IoT Blockchain Deployment Script
+# Automates: Hyperledger Fabric, Cooja IoT Simulation, Blockchain Backend, Frontend Dashboard
 
-set -e  # Exit immediately if a command fails
+set -e  # Exit on any error
+set -u  # Treat unset variables as errors
 
-echo "🚀 Starting Deployment..."
+echo "🚀 Starting full deployment of IoT Blockchain Project!"
 
-# Step 1: Run Cooja Simulation
-echo "🔹 Running Cooja..."
-COOJA_DIR=~/contiki-ng/tools/cooja
+# ====================================================================
+# Helper functions
+# ====================================================================
 
-# Ensure Gradle (`gradlew`) is executable
-chmod +x $COOJA_DIR/gradlew
+# Print and execute commands
+run_cmd() {
+    echo "✔️ $1"
+    $2
+}
 
-# Run Cooja
-cd $COOJA_DIR
-./gradlew run &
+# Check environment prerequisites
+check_prerequisites() {
+    echo "🔍 Checking prerequisites..."
+    for cmd in docker docker-compose node npm git; do
+        if ! command -v $cmd &> /dev/null; then
+            echo "❌ Command $cmd not found! Please install it and re-run the script."
+            exit 1
+        fi
+    done
+    echo "✅ All prerequisites are installed!"
+}
 
-# Give Cooja some time to start
-sleep 10
+# ====================================================================
+# Step 1: Clone and Setup Hyperledger Fabric
+# ====================================================================
+setup_hyperledger() {
+    echo "🔹 Setting up Hyperledger Fabric binaries..."
 
-# Step 2: Initialize Border Routers & TunSlip6
-echo "🔹 Setting Up Border Routers & TunSlip6..."
-BORDER_DIR=~/blockchain-iot-project--main/cooja_simulation/border_routers_code
-TUNSLIP6_PATH=~/contiki-ng/tools/serial-io/tunslip6  # Ensure this is the correct path
-
-# Check if tunslip6 exists
-if [ ! -f "$TUNSLIP6_PATH" ]; then
-    echo "❌ tunslip6 not found! Compiling..."
-    cd ~/contiki-ng/tools/serial-io
-    make tunslip6
-fi
-
-# Set Contiki path
-export CONTIKI=~/contiki-ng
-
-# Compile and Run Border Routers
-cd $BORDER_DIR
-for router in availability-sensor-node integrity-sensor-node mobility-sensor-node network-sensor-node security-sensor-node; do
-    if [ -f "$router.c" ]; then
-        echo "🔹 Compiling $router..."
-        make -C $BORDER_DIR $router || echo "⚠️ Compilation failed for $router, skipping..."
-        sudo ./$router &
-    else
-        echo "⚠️ Source file $router.c not found! Skipping..."
+    # Clone the Hyperledger Fabric test-network if not already downloaded
+    FABRIC_DIR=$HOME/fabric-samples
+    if [ ! -d "$FABRIC_DIR" ]; then
+        git clone https://github.com/hyperledger/fabric-samples.git $FABRIC_DIR
     fi
-done
 
-# Start TunSlip6 for Border Routers
-echo "🔹 Setting up TunSlip6..."
-sudo $TUNSLIP6_PATH -a 127.0.0.1 aaaa::1/64 -p 60020 -t tun0 &
-sudo $TUNSLIP6_PATH -a 127.0.0.1 aaaa::1/64 -p 60002 -t tun1 &
-sudo $TUNSLIP6_PATH -a 127.0.0.1 aaaa::1/64 -p 60003 -t tun2 &
-sudo $TUNSLIP6_PATH -a 127.0.0.1 aaaa::1/64 -p 60004 -t tun3 &
-sudo $TUNSLIP6_PATH -a 127.0.0.1 aaaa::1/64 -p 60005 -t tun4 &
+    # Move necessary binaries and artifacts into your project structure
+    PROJECT_HYPERLEDGER_DIR=~/blockchain-iot-project--main/hyperledger
 
-sleep 5
+    # Copy binaries
+    cp -r $FABRIC_DIR/bin $PROJECT_HYPERLEDGER_DIR/  # Binaries
+    cp -r $FABRIC_DIR/test-network $PROJECT_HYPERLEDGER_DIR/  # Test network setup
 
-# Step 3: Deploy Hyperledger Fabric Network
-echo "🔹 Deploying Hyperledger Fabric Network..."
-FABRIC_DIR=~/blockchain-iot-project--main/blockchain_hyperledger/fabric-samples/test-network
+    export PATH=${HOME}/fabric-samples/bin:$PATH
+    echo "✅ Hyperledger setup complete!"
+}
 
-# Stop any running containers and clean up old configurations
-docker stop $(docker ps -aq) || true
-docker rm $(docker ps -aq) || true
-docker network prune -f || true
-docker volume prune -f || true
+# ====================================================================
+# Step 2: Setup Cooja IoT Simulator
+# ====================================================================
+setup_cooja() {
+    echo "🔹 Setting up Cooja IoT Simulator..."
+    COOJA_DIR=$HOME/contiki-ng/tools/cooja
 
-cd $FABRIC_DIR
-./network.sh down
-rm -rf organizations/
-./network.sh up createChannel -c mychannel -ca
+    if [ ! -d "$COOJA_DIR" ]; then
+        echo "❌ Cooja not found! Please install Contiki-NG and ensure it is located at $HOME/contiki-ng"
+        exit 1
+    fi
 
-sleep 5
+    # Ensure the Gradle wrapper is executable
+    chmod +x $COOJA_DIR/gradlew
 
-# Step 4: Deploy Blockchain Organizations (SecurityOrg, IntegrityOrg, NetworkMobilityOrg)
-echo "🔹 Deploying Blockchain Organizations..."
-./SecurityOrg.sh up
-./IntegrityOrg.sh up
-./NetworkMobilityOrg.sh up
+    # Start Cooja
+    cd $COOJA_DIR
+    ./gradlew run &
+    echo "✅ Cooja Simulator launched successfully!"
+}
 
-sleep 5
+# ====================================================================
+# Step 3: Start Border Routers and Compile Simulation Nodes
+# ====================================================================
+start_border_routers() {
+    echo "🔹 Starting border routers and compiling sensor nodes..."
+    BORDER_ROUTERS_DIR=~/blockchain-iot-project--main/simulation/devices
+    TUNSLIP=$HOME/contiki-ng/tools/serial-io/tunslip6
 
-# Step 5: Deploy Chaincodes
-echo "🔹 Deploying Chaincodes..."
-CHAINCODE_DIR=~/blockchain-iot-project--main/blockchain_hyperledger/chaincodes
+    # Create TUNSLIP6 if it is missing
+    if [ ! -f "$TUNSLIP" ]; then
+        echo "🔹 Compiling TUNSLIP6..."
+        run_cmd "Compiling TUNSLIP6" "cd $HOME/contiki-ng/tools/serial-io && make tunslip6"
+    fi
 
-for chaincode in security integrity mobility network availability; do
-    echo "🔹 Deploying $chaincode..."
-    ./network.sh deployCC -ccn $chaincode -ccp ../asset-transfer-basic/cc-$chaincode/ -ccl node
-done
+    # Setup and launch border routers
+    cd $BORDER_ROUTERS_DIR
+    for NODE in *.c; do
+        echo "🔹 Compiling $NODE..."
+        make -C $BORDER_ROUTERS_DIR $(basename $NODE .c)
+        sudo ./$(basename $NODE .c) &
+    done
 
-sleep 5
+    # Setup TunSlip6 connections
+    echo "🔹 Setting up TunSlip6 connections..."
+    sudo $TUNSLIP -a 127.0.0.1 aaaa::1/64 -p 60020 -t tun0 &
+    sudo $TUNSLIP -a 127.0.0.1 aaaa::1/64 -p 60002 -t tun1 &
+    echo "✅ Border routers and TunSlip6 are running!"
+}
 
-# Step 6: Start Hyperledger REST API
-echo "🔹 Starting Hyperledger REST API..."
-REST_API_DIR=~/blockchain-iot-project--main/blockchain_hyperledger/rest_api_codes
-cd $REST_API_DIR
+# ====================================================================
+# Step 4: Deploy the Hyperledger Network
+# ====================================================================
+deploy_hyperledger_fabric() {
+    echo "🔹 Starting Hyperledger Fabric Network..."
+    FABRIC_NETWORK_DIR=~/blockchain-iot-project--main/hyperledger/test-network
 
-# Ensure dependencies are installed
-if [ ! -d "node_modules" ]; then
-    npm install
-fi
+    # Teardown any previous networks and start fresh
+    cd $FABRIC_NETWORK_DIR
+    ./network.sh down
+    ./network.sh up createChannel -c mychannel -ca
 
-npm run build
+    # Deploy smart contracts
+    echo "🔹 Installing chaincodes..."
+    for CC in security integrity mobility network; do
+        ./network.sh deployCC -ccn $CC -ccp ../smart_contracts/$CC/ -ccl node
+    done
+    echo "✅ Hyperledger Fabric network is up and chaincodes are deployed!"
+}
 
-# Generate .env file
-TEST_NETWORK_HOME=$FABRIC_DIR npm run generateEnv
+# ====================================================================
+# Step 5: Start Backend API
+# ====================================================================
+start_backend() {
+    echo "🔹 Starting backend API..."
+    BACKEND_DIR=~/blockchain-iot-project--main/src/backend
+    cd $BACKEND_DIR
 
-# Set Redis password
-export REDIS_PASSWORD=$(uuidgen)
+    # Install dependencies and start the backend
+    if [ ! -d "node_modules" ]; then
+        npm install
+    fi
 
-npm run start:redis &
-npm run start:dev &
+    npm run start &
+    echo "✅ Backend API is up and running!"
+}
 
-sleep 5
+# ====================================================================
+# Step 6: Start Frontend Dashboard
+# ====================================================================
+start_frontend() {
+    echo "🔹 Starting frontend dashboard..."
+    FRONTEND_DIR=~/blockchain-iot-project--main/src/frontend
+    cd $FRONTEND_DIR
 
-# Step 7: Start Hyperledger Blockchain Explorer
-echo "🔹 Starting Blockchain Explorer..."
-EXPLORER_DIR=~/blockchain-iot-project--main/blockchain_hyperledger/hyperledger_explorer_config_files
-cd $EXPLORER_DIR
+    # Install dependencies and start the frontend
+    if [ ! -d "node_modules" ]; then
+        npm install
+    fi
 
-cp -r ../fabric-samples/test-network/organizations/ .
-docker-compose up -d
+    npm start &
+    echo "✅ Frontend Dashboard is live!"
+}
 
-sleep 5
+# ====================================================================
+# Step 7: Final Launch Sequence
+# ====================================================================
+start_full_deployment() {
+    echo "🔹 Deployment starting..."
 
-# Step 8: Start Backend API
-echo "🔹 Starting Backend API..."
-BACKEND_DIR=~/blockchain-iot-project--main/web_application/backend
-cd $BACKEND_DIR
+    check_prerequisites
+    setup_hyperledger
+    setup_cooja
+    start_border_routers
+    deploy_hyperledger_fabric
+    start_backend
+    start_frontend
 
-# Ensure dependencies are installed
-if [ ! -d "node_modules" ]; then
-    npm install
-fi
+    echo "🎉 Deployment complete! All systems are up and running!"
+    echo "👉 Access the frontend at http://localhost:3000"
+    echo "👉 Backend API running at http://localhost:3001/api"
+}
 
-# Kill any existing backend process before restarting
-pkill -f "node index.js" || true
-
-node api.routes.js &
-
-sleep 5
-
-# Step 9: Start Frontend Dashboard
-echo "🔹 Starting Frontend Dashboard..."
-FRONTEND_DIR=~/blockchain-iot-project--main/web_application/frontend
-cd $FRONTEND_DIR
-
-# Kill any existing frontend process
-pkill -f "npm start" || true
-
-# Ensure dependencies are installed
-if [ ! -d "node_modules" ]; then
-    npm install
-fi
-
-npm start &
-
-echo "✅ Deployment Complete! 🚀 Everything is up and running."
-
-# Keep script alive
-wait
+# Launch the deployment
+start_full_deployment
