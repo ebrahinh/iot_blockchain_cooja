@@ -1,0 +1,192 @@
+/* Styling Variables (Centralized for Theming and Reusability) */
+:root {
+    --primary-bg: #f4f4f4; /* Default Light Background */
+    --secondary-bg: #f9f9f9; /* Lighter Section Background */
+    --dark-bg: #232323; /* Dark Base Background */
+    --light-fg: #fafafa; /* Light Foreground Color */
+    --main-text: #333; /* Main Text Color */
+    --highlight-color: #0056b3; /* Highlight/Focus Color */
+    --focus-outline: 3px solid var(--highlight-color); /* Hover and Focus Indication */
+    --box-shadow-light: 0 1px 3px rgba(0, 0, 0, 0.1); /* Subtle Shadow */
+    --box-shadow-hover: 0 4px 8px rgba(0, 0, 0, 0.2); /* Elevated Hover Shadow */
+    --border-radius: 10px; /* Consistent Border Radius for Containers */
+    --neutral-gray: #e0e0e0; /* Neutral Background for Info Boxes */
+}
+
+/* Dark Theme Overrides */
+:root[data-theme="dark"] {
+    --primary-bg: #121212;
+    --secondary-bg: #1e1e1e;
+    --dark-bg: #2e2e2e;
+    --light-fg: #e0e0e0;
+    --main-text: #e0e0e0;
+    --neutral-gray: #2e2e2e;
+    --highlight-color: #2299ff;
+    --box-shadow-light: 0 1px 3px rgba(0, 0, 0, 0.2);
+    --box-shadow-hover: 0 4px 8px rgba(255, 255, 255, 0.1);
+}
+
+/* Universal Reset */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background-color: var(--primary-bg);
+    color: var(--main-text);
+    scroll-behavior: smooth;
+}
+
+/* #mod Container Styling */
+#mod {
+    display: flex;
+    flex-direction: row;
+    overflow-x: auto; /* Enable horizontal scrolling */
+    gap: 15px; /* Add space between child elements */
+    padding: 10px;
+    background-color: var(--primary-bg);
+    height: calc(100vh - 60px); /* Ensure responsive height */
+    max-height: 85vh; /* Prevent overflow on small screens */
+    align-items: flex-start; /* Consistent alignment */
+    outline: 3px solid transparent;
+    outline-offset: 2px;
+}
+
+#mod:focus {
+    outline: var(--focus-outline);
+    outline-offset: 4px;
+}
+
+/* Dashboard Component */
+.dashboard {
+    display: flex;
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 20px;
+    background-color: var(--secondary-bg);
+    padding: 15px;
+    align-items: flex-start;
+    outline: 3px solid transparent;
+    outline-offset: 2px;
+}
+
+.dashboard:focus {
+    outline: var(--focus-outline);
+}
+
+/* Chart Container Styling */
+.chart-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    align-items: center;
+    padding: 20px;
+    margin: 20px auto;
+    width: 70vw;
+    max-width: 100%;
+    height: calc(65vh - 40px); /* Height adjustment for responsiveness */
+    min-height: 280px; /* Minimum height for smaller screens */
+    max-height: 90vh; /* Prevent overflow on taller screens */
+    background-color: #fff;
+    color: var(--main-text);
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow-light);
+    transition: box-shadow 0.3s ease-in-out;
+    z-index: 1; /* Position Charts Above Backgrounds */
+}
+
+.chart-container:hover {
+    box-shadow: var(--box-shadow-hover); /* Elevate on Hover */
+}
+
+/* Scatter/Line Chart Styles */
+.scatter,
+.line {
+    background-color: var(--dark-bg); /* Improved Accessibility for Dark Charts */
+    color: var(--light-fg); /* High Contrast for Readability */
+    padding: 15px;
+    border-radius: var(--border-radius);
+    transition: transform 0.2s ease, box-shadow 0.3s ease;
+}
+
+.scatter:hover,
+.line:hover {
+    transform: translateY(-5px); /* Subtle lift on hover */
+    box-shadow: var(--box-shadow-hover); /* Enhanced shadow for hover */
+}
+
+.scatter:focus,
+.line:focus {
+    outline: var(--focus-outline);
+}
+
+/* Scrollable Areas */
+.scroll-required {
+    overflow-y: auto;
+    overflow-x: hidden; /* Prevent Page Overflow */
+    padding: 10px;
+    max-height: 65vh;
+    background-color: var(--primary-bg);
+    scroll-behavior: smooth; /* User-Friendly Scroll */
+}
+
+/* Info Container Styles */
+.info-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 20px;
+    background-color: var(--neutral-gray);
+    color: var(--main-text);
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow-light);
+    width: auto;
+    max-width: none;
+    z-index: 1000;
+    text-align: center;
+    transition: box-shadow 0.3s ease;
+}
+
+.info-container:hover {
+    box-shadow: var(--box-shadow-hover);
+}
+
+.info-container:focus {
+    outline: var(--focus-outline);
+}
+
+/* Small Screens Adjustments */
+@media (max-width: 768px) {
+    #mod {
+        flex-direction: column;
+        gap: 10px; /* Reduce spacing for compact layouts */
+        overflow-y: auto;
+        overflow-x: hidden;
+        height: auto;
+    }
+
+    .chart-container {
+        width: 90vw;
+        height: calc(50vh - 30px); /* Responsive height */
+        max-width: 100%;
+        min-height: 250px; /* Ensure visibility on smaller screens */
+        margin: 10px;
+        padding: 15px;
+        box-shadow: var(--box-shadow-light);
+    }
+
+    .info-container {
+        position: static; /* Adjust for linear flow */
+        margin: 15px auto;
+        width: 100%;
+        text-align: center; /* Center-align text */
+    }
+}
+
+/* Accessibility Enhancements for Higher-Resolution Devices */
+@media (min-resolution: 2dppx), (min-resolution: 192dpi) {
+    .scatter,
+    .line {
+        font-size: 1rem;
+        padding: 20px;
+    }
+}

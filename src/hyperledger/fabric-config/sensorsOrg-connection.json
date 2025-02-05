@@ -1,0 +1,49 @@
+{
+    "name": "test-network-sensors",
+    "version": "1.0.0",
+    "client": {
+        "organization": "SensorsOrg",
+        "connection": {
+            "timeout": {
+                "peer": {
+                    "endorser": "300"
+                }
+            }
+        }
+    },
+    "organizations": {
+        "SensorsOrg": {
+            "mspid": "SensorsOrgMSP",
+            "peers": [
+                "peer0.sensors.example.com"
+            ],
+            "certificateAuthorities": [
+                "ca.sensors.example.com"
+            ]
+        }
+    },
+    "peers": {
+        "peer0.sensors.example.com": {
+            "url": "grpcs://localhost:7051",
+            "tlsCACerts": {
+                "pem": "-----BEGIN CERTIFICATE-----\nYOUR_PEER_TLS_CA_CERTIFICATE_CONTENT_HERE\n-----END CERTIFICATE-----"
+            },
+            "grpcOptions": {
+                "ssl-target-name-override": "peer0.sensors.example.com",
+                "hostnameOverride": "peer0.sensors.example.com"
+            }
+        }
+    },
+    "certificateAuthorities": {
+        "ca.sensors.example.com": {
+            "url": "https://localhost:7054",
+            "caName": "ca-sensors",
+            "tlsCACerts": {
+                "pem": "-----BEGIN CERTIFICATE-----\nYOUR_CA_TLS_CERTIFICATE_CONTENT_HERE\n-----END CERTIFICATE-----"
+            },
+            "httpOptions": {
+                "verify": false
+            }
+        }
+    }
+}

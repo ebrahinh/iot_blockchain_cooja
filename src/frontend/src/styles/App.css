@@ -1,0 +1,169 @@
+/* Base Theme Variables Shared Across Themes */
+:root {
+    --primary-bg: #f4f4f4; /* Default background (light theme fallback) */
+    --secondary-bg: #f9f9f9; /* Default secondary background */
+    --contrast-dark: #232323; /* Default high-contrast dark */
+    --contrast-light: #fafafa; /* Default high-contrast light */
+    --highlight-color: #0056b3; /* Default highlight color */
+    --light-text: #333; /* Default text color */
+    --box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); /* Default box-shadow */
+    --focused-outline: 3px solid var(--highlight-color); /* Default focus outline */
+    --neutral-gray: #e0e0e0; /* Default neutral gray */
+}
+
+/* Dark Theme Overrides */
+:root[data-theme="dark"] {
+    --primary-bg: #121212;
+    --secondary-bg: #1e1e1e;
+    --contrast-dark: #f4f4f4;
+    --contrast-light: #232323;
+    --highlight-color: #2299ff;
+    --light-text: #e0e0e0; /* Lighter text */
+    --box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2); /* Updated box-shadow */
+    --neutral-gray: #2e2e2e; /* Info container background for dark mode */
+}
+
+/* General Styles */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background-color: var(--primary-bg);
+    color: var(--light-text);
+}
+
+/* Reusable Card Component for Flexibility */
+.card {
+    padding: 15px;
+    border-radius: 12px;
+    box-shadow: var(--box-shadow);
+    background-color: var(--primary-bg);
+    color: var(--light-text);
+    transition: box-shadow 0.3s ease;
+}
+
+/* Dashboard Container */
+.dashboard,
+#mod {
+    display: flex;
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 15px;
+    padding: 10px;
+    background-color: var(--secondary-bg);
+    height: calc(100vh - 60px);
+    max-height: 85vh;
+    align-items: flex-start;
+    outline: 3px solid transparent;
+    outline-offset: 2px;
+}
+
+.dashboard:focus,
+#mod:focus {
+    outline: var(--focused-outline);
+    outline-offset: 4px;
+}
+
+/* Scrollable Areas */
+.scroll-required {
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 10px;
+    max-height: 65vh;
+    background-color: var(--primary-bg);
+    scroll-behavior: smooth;
+}
+
+/* Chart Container Styles */
+.chart-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    align-items: center;
+    position: relative;
+    height: calc(65vh - 40px);
+    max-height: 90vh;
+    min-height: 280px;
+    width: 70vw;
+    max-width: 100%;
+    margin: 20px auto;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: var(--box-shadow);
+    background-color: #fff;
+    z-index: 1;
+    transition: box-shadow 0.3s ease-in-out;
+}
+
+.chart-container:hover {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15); /* Subtle hover effect */
+}
+
+/* Scatter and Line Charts */
+.scatter,
+.line {
+    padding: 15px;
+    border-radius: 12px;
+    box-shadow: var(--box-shadow);
+    background-color: var(--primary-bg);
+    color: var(--light-text);
+    transition: box-shadow 0.3s ease;
+}
+
+@media (min-resolution: 2dppx), (min-resolution: 192dpi) {
+    .scatter,
+    .line {
+        font-size: 1rem; /* High-density screens adjustment */
+        padding: 20px;
+    }
+}
+
+/* Fixed Info Container */
+.info-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: var(--box-shadow);
+    background-color: var(--neutral-gray);
+    color: var(--light-text);
+    z-index: 1000;
+    text-align: center;
+    outline: 3px solid transparent;
+    outline-offset: 2px;
+    transition: box-shadow 0.3s ease;
+}
+
+.info-container:focus {
+    outline: var(--focused-outline);
+    outline-offset: 4px;
+}
+
+/* Responsive Adjustments for Small Screens */
+@media (max-width: 768px) {
+    #mod {
+        flex-direction: column;
+        overflow-y: auto;
+        gap: 10px;
+        height: auto;
+        max-height: calc(100vh - 40px);
+    }
+
+    .chart-container {
+        width: 90vw;
+        height: calc(50vh - 30px);
+        max-width: 100%;
+        min-height: 250px;
+        margin: 10px;
+        padding: 15px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1); /* Subtle shadow for smaller containers */
+    }
+
+    .info-container {
+        position: static;
+        margin: 15px auto;
+        width: 100%;
+        text-align: center;
+    }
+}

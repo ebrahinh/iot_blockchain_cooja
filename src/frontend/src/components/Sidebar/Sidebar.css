@@ -1,0 +1,142 @@
+/* Sidebar Container */
+.sidebar-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 250px;
+  background-color: #333;
+  color: #fff;
+  overflow-y: auto; /* Enable scroll for overflow */
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.5); /* Adds a subtle shadow to the sidebar */
+  z-index: 1000; /* Ensure the sidebar is always on top */
+}
+
+/* Sidebar Header */
+.sidebar-header {
+  font-size: 1.5rem;
+  font-weight: bold;
+  padding: 15px 20px;
+  text-align: center;
+  background-color: #222; /* Darker header background */
+  border-bottom: 1px solid #444; /* Slight separation line */
+}
+
+/* Sidebar Content */
+.sidebar-content {
+  padding: 20px 15px;
+  font-size: 1rem;
+}
+
+/* Sidebar Menu */
+.sidebar-menu {
+  margin-top: 10px;
+}
+
+.sidebar-menu-item {
+  padding: 12px 20px;
+  font-size: 1rem;
+  color: #ccc; /* Default text color */
+  text-decoration: none; /* Removes underline */
+  display: block;
+  border-radius: 5px; /* Smooth edges for hover style */
+  transition: background-color 0.3s, color 0.3s; /* Smooth transition for hover effect */
+}
+
+.sidebar-menu-item:hover,
+.sidebar-menu-item.activeClicked {
+  background-color: #444; /* Highlight background when hovered or active */
+  color: #fff; /* Highlight text color */
+}
+
+/* Sidebar Footer */
+.sidebar-footer {
+  text-align: center;
+  font-size: 0.85rem;
+  color: #ccc;
+  padding: 20px;
+  border-top: 1px solid #444; /* Separation line for footer */
+  background-color: #222;
+}
+
+/* Content Layout (Dashboard Main Body) */
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  margin-left: 250px; /* Account for sidebar width */
+  height: 100vh;
+  background-color: #f8f9fa; /* Light background for contrast */
+  overflow: hidden;
+}
+
+/* Charts and Dashboard */
+.chart-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  height: 80vh;
+  margin: 20px auto;
+  padding: 20px;
+  width: calc(100vw - 270px); /* Account for sidebar + margin */
+  background-color: #fff; /* White background for charts */
+  border-radius: 15px; /* Smooth edges */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Light shadow for depth effect */
+}
+
+.chart {
+  flex: 1;
+  width: 100%;
+  margin: 10px;
+}
+
+.info-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 20px;
+  background-color: #2a2a2a;
+  color: #fff;
+  font-size: 0.9rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Subtle floating look */
+}
+
+/* Media Queries for Responsiveness */
+
+/* Medium Screens (Tablets) */
+@media (max-width: 768px) {
+  .sidebar-container {
+    width: 200px; /* Reduce sidebar width */
+  }
+
+  .chart-container {
+    width: calc(100vw - 220px); /* Adjust remaining space */
+    height: 70vh;
+  }
+
+  .sidebar-menu-item {
+    font-size: 0.9rem; /* Slightly smaller text for sidebar links */
+  }
+}
+
+/* Small Screens (Phones) */
+@media (max-width: 480px) {
+  .sidebar-container {
+    width: 180px; /* Further reduce sidebar width */
+  }
+
+  .chart-container {
+    width: calc(100vw - 200px); /* Adjust remaining space */
+    height: 60vh; /* Adjust height for smaller screens */
+  }
+
+  .sidebar-menu-item {
+    font-size: 0.8rem; /* Shrink text size */
+    padding: 8px 15px; /* Compact padding */
+  }
+
+  .dashboard {
+    margin-left: 180px; /* Adjust margin for sidebar */
+  }
+}

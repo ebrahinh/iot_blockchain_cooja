@@ -1,0 +1,46 @@
+{
+	"name": "test-network-sensors",
+	"version": "1.0.0",
+	"client": {
+		"tlsEnable": true,
+		"id": "exploreradmin",
+		"password": "exploreradminpw"
+	},
+	"enableAuthentication": true,
+	"organization": "SensorsOrgMSP",
+	"connection": {
+		"timeout": {
+			"peer": {
+				"endorser": "300"
+			},
+			"orderer": "300"
+		}
+	},
+	"channels": {
+		"mychannel": {
+			"peers": {
+				"peer0.sensors.example.com": {}
+			}
+		}
+	},
+	"organizations": {
+		"SensorsOrgMSP": {
+			"mspid": "SensorsOrgMSP",
+			"adminPrivateKey": {
+				"path": "/tmp/crypto/peerOrganizations/sensors.example.com/users/Admin@sensors.example.com/msp/keystore/priv_sk"
+			},
+			"peers": ["peer0.sensors.example.com"],
+			"signedCert": {
+				"path": "/tmp/crypto/peerOrganizations/sensors.example.com/users/Admin@sensors.example.com/msp/signcerts/Admin@sensors.example.com-cert.pem"
+			}
+		}
+	},
+	"peers": {
+		"peer0.sensors.example.com": {
+			"tlsCACerts": {
+				"path": "/tmp/crypto/peerOrganizations/sensors.example.com/peers/peer0.sensors.example.com/tls/ca.crt"
+			},
+			"url": "grpcs://peer0.sensors.example.com:7051"
+		}
+	}
+}

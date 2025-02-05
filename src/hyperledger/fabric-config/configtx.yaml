@@ -1,0 +1,79 @@
+# Copyright IBM Corp. All Rights Reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+---
+################################################################################
+#
+#   Section: Organizations
+#
+#   - This section defines the different organizational identities which will
+#   be referenced later in the configuration.
+#
+################################################################################
+---
+Organizations:
+  - &SensorsOrg
+    Name: SensorsOrgMSP
+    ID: SensorsOrgMSP
+    MSPDir: ../organizations/peerOrganizations/sensors.example.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('SensorsOrgMSP.admin', 'SensorsOrgMSP.peer', 'SensorsOrgMSP.client')"
+      Writers:
+        Type: Signature
+        Rule: "OR('SensorsOrgMSP.admin', 'SensorsOrgMSP.client')"
+      Admins:
+        Type: Signature
+        Rule: "OR('SensorsOrgMSP.admin')"
+      Endorsement:
+        Type: Signature
+        Rule: "OR('SensorsOrgMSP.peer')"
+    AnchorPeers:
+      - Host: peer0.sensors.example.com
+        Port: 7051
+
+Profiles:
+  OrdererGenesis:
+    Orderer:
+      OrdererType: etcdraft
+      Addresses:
+        - orderer.example.com:7050
+      Organizations:
+        - *SensorsOrg
+      Policies:
+        Readers:
+          Type: ImplicitMeta
+          Rule: "ANY Readers"
+        Writers:
+          Type: ImplicitMeta
+          Rule: "ANY Writers"
+        Admins:
+          Type: ImplicitMeta
+          Rule: "MAJORITY Admins"
+      Capabilities:
+        V2_0: true
+    Consortiums:
+      SensorsConsortium:
+        Organizations:
+          - *SensorsOrg
+  
+  SensorsChannel:
+    Consortium: SensorsConsortium
+    Application:
+      Organizations:
+        - *SensorsOrg
+      Policies:
+        Readers:
+          Type: ImplicitMeta
+          Rule: "ANY Readers"
+        Writers:
+          Type: ImplicitMeta
+          Rule: "ANY Writers"
+        Admins:
+          Type: ImplicitMeta
+          Rule: "MAJORITY Admins"
+      Capabilities:
+        V2_0: true
