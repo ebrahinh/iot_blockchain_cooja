@@ -52,7 +52,7 @@ Project Structure
 │   ├── assets/                 // Static assets (images, icons, etc.)
 │   ├── styles/                 // Stylesheets (CSS files)
 │   ├── utils/                  // Helper functions
-│   └── index.js                // Entry point for rendering the app
+│   └── api.routes.js                // Entry point for rendering the app
 
 
 

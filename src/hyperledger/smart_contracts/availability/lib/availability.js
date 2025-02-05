@@ -1,141 +1,138 @@
 'use strict';
 
-const stringify = require('json-stringify-deterministic');
-const sortKeysRecursive = require('sort-keys-recursive');
 const { Contract } = require('fabric-contract-api');
 
 class Availability extends Contract {
-
+    /**
+     * Initialize the ledger with some sensor availability records (optional)
+     * @param {*} ctx - The transaction context object
+     */
     async InitLedger(ctx) {
-        const assets = [
-            {
-                RID: '101',
-                Attempts: 0,
-                SecurityIncidents: 0,
-            },
-            {
-                RID: '102',
-                Attempts: 0,
-                SecurityIncidents: 0,
-            },
-            {
-                RID: '103',
-                Attempts: 0,
-                SecurityIncidents: 0,
-            },
-            {
-                RID: '104',
-                Attempts: 0,
-                SecurityIncidents: 0,
-            },
-            {
-                RID: '105',
-                Attempts: 0,
-                SecurityIncidents: 0,
-            },
-            {
-                RID: '106',
-                Attempts: 0,
-                SecurityIncidents: 0,
-            },
+        console.info('Ledger initialized with default Availability records');
+        const defaultSensors = [
+            { RID: '101', Attempts: 0, SecurityIncidents: 0 },
+            { RID: '102', Attempts: 5, SecurityIncidents: 2 },
         ];
 
-        for (const asset of assets) {
-            asset.docType = 'availability-sensor';
-            await ctx.stub.putState(asset.RID, Buffer.from(stringify(sortKeysRecursive(asset))));
+        for (const sensor of defaultSensors) {
+            await ctx.stub.putState(
+                sensor.RID,
+                Buffer.from(JSON.stringify(sensor))
+            );
         }
     }
 
-    async CreateAvailability(ctx, rid, attempts = 0, securityIncidents = 0) {
-        if (!rid || typeof rid !== 'string' || rid.length === 0) {
-            throw new Error('RID must be a non-empty string.');
-        }
-        if (isNaN(attempts) || attempts < 0) {
-            throw new Error('Attempts must be a non-negative number.');
-        }
-        if (isNaN(securityIncidents) || securityIncidents < 0) {
-            throw new Error('SecurityIncidents must be a non-negative number.');
-        }
-
-        const exists = await this.AssetExists(ctx, rid);
-        if (exists) {
-            throw new Error(`Availability record ${rid} already exists.`);
+    /**
+     * Create a new availability record
+     * @param {Object} ctx - The transaction context object
+     * @param {String} rid - Sensor ID (unique identifier)
+     * @param {Number} attempts - Number of completed attempts
+     * @param {Number} securityIncidents - Number of security issues
+     */
+    async CreateAvailabilityRecord(ctx, rid, attempts, securityIncidents) {
+        if (await this.assetExists(ctx, rid)) {
+            throw new Error(`Availability record ${rid} already exists`);
         }
 
-        const asset = { RID: rid, Attempts: parseInt(attempts), SecurityIncidents: parseInt(securityIncidents), docType: 'availability-sensor' };
-        await ctx.stub.putState(rid, Buffer.from(stringify(sortKeysRecursive(asset))));
-        return JSON.stringify(asset);
+        if (!rid || rid.trim() === '') {
+            throw new Error('RID (Sensor ID) cannot be empty');
+        }
+
+        const newSensor = {
+            RID: rid,
+            Attempts: parseInt(attempts) || 0,
+            SecurityIncidents: parseInt(securityIncidents) || 0,
+        };
+
+        await ctx.stub.putState(rid, Buffer.from(JSON.stringify(newSensor)));
+
+        return JSON.stringify(newSensor);
     }
 
-    async ReadAvailability(ctx, rid) {
-        const assetJSON = await ctx.stub.getState(rid);
-        if (!assetJSON || assetJSON.length === 0) {
-            throw new Error(`The asset with RID ${rid} does not exist.`);
+    /**
+     * Read the availability record for a specific sensor
+     * @param {*} ctx - Transaction context
+     * @param {String} rid - Sensor ID to read from the ledger
+     */
+    async ReadAvailabilityRecord(ctx, rid) {
+        const recordBytes = await ctx.stub.getState(rid);
+
+        if (!recordBytes || recordBytes.length === 0) {
+            throw new Error(`Availability record with ID ${rid} does not exist`);
         }
-        return assetJSON.toString();
+
+        return recordBytes.toString();
     }
 
+    /**
+     * Increment the number of attempts for a specific sensor
+     * @param {*} ctx - Transaction context
+     * @param {String} rid - Sensor ID
+     */
     async IncrementAttempts(ctx, rid) {
-        const assetJSON = await this.ReadAvailability(ctx, rid);
-        const asset = JSON.parse(assetJSON);
+        const sensorRecord = await this.ReadAvailabilityRecord(ctx, rid);
+        const sensor = JSON.parse(sensorRecord);
 
-        asset.Attempts += 1;
-        await ctx.stub.putState(rid, Buffer.from(stringify(sortKeysRecursive(asset))));
-        return JSON.stringify(asset);
+        // Increment attempts
+        sensor.Attempts += 1;
+
+        // Update state
+        await ctx.stub.putState(rid, Buffer.from(JSON.stringify(sensor)));
+
+        return JSON.stringify(sensor);
     }
 
+    /**
+     * Increment the number of security incidents for a specific sensor
+     * @param {*} ctx - Transaction context
+     * @param {*} rid - Sensor ID
+     */
     async IncrementSecurityIncidents(ctx, rid) {
-        const assetJSON = await this.ReadAvailability(ctx, rid);
-        const asset = JSON.parse(assetJSON);
+        const sensorRecord = await this.ReadAvailabilityRecord(ctx, rid);
+        const sensor = JSON.parse(sensorRecord);
 
-        asset.SecurityIncidents += 1;
-        await ctx.stub.putState(rid, Buffer.from(stringify(sortKeysRecursive(asset))));
-        return JSON.stringify(asset);
+        // Increment security incidents
+        sensor.SecurityIncidents += 1;
+
+        // Update state
+        await ctx.stub.putState(rid, Buffer.from(JSON.stringify(sensor)));
+
+        return JSON.stringify(sensor);
     }
 
-    async UpdateAvailability(ctx, rid, attempts, securityIncidents) {
-        const exists = await this.AssetExists(ctx, rid);
-        if (!exists) {
-            throw new Error(`The asset with RID ${rid} does not exist.`);
+    /**
+     * Delete an availability record
+     * @param {*} ctx - Transaction context
+     * @param {*} rid - Sensor ID to delete
+     */
+    async DeleteAvailabilityRecord(ctx, rid) {
+        if (!(await this.assetExists(ctx, rid))) {
+            throw new Error(`Availability record ${rid} does not exist`);
         }
 
-        const updatedAsset = { RID: rid, Attempts: parseInt(attempts), SecurityIncidents: parseInt(securityIncidents), docType: 'availability-sensor' };
-        await ctx.stub.putState(rid, Buffer.from(stringify(sortKeysRecursive(updatedAsset))));
-        return JSON.stringify(updatedAsset);
-    }
-
-    async DeleteAvailability(ctx, rid) {
-        const exists = await this.AssetExists(ctx, rid);
-        if (!exists) {
-            throw new Error(`The asset with RID ${rid} does not exist.`);
-        }
         await ctx.stub.deleteState(rid);
+        return `Availability record ${rid} has been successfully deleted`;
     }
 
-    async AssetExists(ctx, rid) {
-        const assetJSON = await ctx.stub.getState(rid);
-        return assetJSON && assetJSON.length > 0;
-    }
+    /**
+     * Get all availability records on the ledger (useful for dashboards)
+     * @param {*} ctx - Transaction context
+     */
+    async GetAllAvailabilityRecords(ctx) {
+        const iterator = await ctx.stub.getStateByRange('', '');
+        const results = [];
 
-    async GetAllAvailability(ctx) {
-        const allResults = [];
-        const startKey = 'availability-sensor~';
-        const endKey = 'availability-sensor~' + String.fromCharCode(1111111);
-
-        const iterator = await ctx.stub.getStateByRange(startKey, endKey);
-        let result = await iterator.next();
-
-        while (!result.done) {
-            const strValue = Buffer.from(result.value.value.toString()).toString('utf8');
-            try {
-                const record = JSON.parse(strValue);
-                allResults.push(record);
-            } catch (err) {
-                console.error(err);
-            }
-            result = await iterator.next();
+        for await (const record of iterator) {
+            results.push(JSON.parse(record.value.toString()));
         }
-        return JSON.stringify(allResults);
+
+        return JSON.stringify(results);
+    }
+
+    // Utility: Check if an asset exists
+    async assetExists(ctx, rid) {
+        const recordBytes = await ctx.stub.getState(rid);
+        return recordBytes && recordBytes.length > 0;
     }
 }
 

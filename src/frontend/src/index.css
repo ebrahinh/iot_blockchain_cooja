@@ -1,24 +1,15 @@
-/* Reset default styles */
+/* Reset default styles for consistency */
 body {
   margin: 0;
   padding: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+  sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #f5f5f5; /* Light grey background for a clean look */
+  background-color: #f5f5f5; /* Light grey background for clean and professional UI */
   color: #333; /* Standard text color */
-}
-
-/* Code block styling */
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
-  background-color: #eaeaea;
-  padding: 2px 4px;
-  border-radius: 4px;
-  color: #d63384;
+  line-height: 1.6;
 }
 
 /* Global container styles */
@@ -28,17 +19,28 @@ code {
   padding: 20px;
 }
 
-/* Header styles */
+/* Code block styling for better readability */
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+  background-color: #eaeaea;
+  padding: 2px 4px;
+  border-radius: 4px;
+  color: #d63384;
+}
+
+/* Header styling for standard app headers */
 header {
   background-color: #4a90e2;
   color: white;
-  padding: 15px 0;
+  padding: 20px 0;
   text-align: center;
-  font-size: 1.5rem;
+  font-size: 1.8rem;
   font-weight: bold;
+  text-transform: uppercase;
+  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
 }
 
-/* Sidebar styles */
+/* Sidebar: fixed navigation for easy access */
 .sidebar {
   background-color: #282c34;
   color: white;
@@ -49,30 +51,33 @@ header {
   left: 0;
   display: flex;
   flex-direction: column;
-  padding: 10px;
+  padding: 20px;
   box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
 }
 
 .sidebar a {
   color: white;
   text-decoration: none;
-  margin: 10px 0;
+  margin: 15px 0;
   font-size: 1rem;
   font-weight: 500;
+  transition: color 0.3s ease;
 }
 
 .sidebar a:hover {
-  color: #4a90e2;
+  color: #4a90e2; /* Highlighted link color */
 }
 
-/* Main content styles */
+/* Main content margin adjusted for sidebar */
 .main-content {
-  margin-left: 260px; /* Adjusted for sidebar width */
+  margin-left: 260px; /* Space for sidebar */
   padding: 20px;
+  background-color: #ffffff; /* White background for clarity */
   min-height: 100vh;
+  box-sizing: border-box;
 }
 
-/* Chart container styles */
+/* Chart container styling */
 .chart-container {
   background-color: white;
   border-radius: 8px;
@@ -81,29 +86,98 @@ header {
   margin-bottom: 20px;
 }
 
-/* Buttons */
+/* Formatted page titles */
+h1 {
+  color: #4a90e2;
+  font-size: 1.6rem;
+  text-transform: capitalize;
+  margin-top: 0;
+  margin-bottom: 20px;
+}
+
+h2 {
+  color: #333;
+  font-size: 1.4rem;
+  margin-bottom: 15px;
+}
+
+/* Button styles */
 button {
   background-color: #4a90e2;
   color: white;
   border: none;
-  padding: 10px 15px;
-  border-radius: 4px;
+  padding: 10px 20px;
+  border-radius: 5px;
   cursor: pointer;
   font-size: 1rem;
+  transition: background-color 0.2s ease;
 }
 
 button:hover {
   background-color: #357ab7;
 }
 
-/* Footer styles */
+/* Link styles to improve clickable visibility */
+a {
+  text-decoration: none;
+  color: #4a90e2;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: #0056b3;
+}
+
+/* Footer styling */
 footer {
   text-align: center;
   background-color: #4a90e2;
   color: white;
-  padding: 10px;
-  position: relative;
+  padding: 15px 0;
+  position: fixed;
   bottom: 0;
   width: 100%;
   font-size: 0.9rem;
+  box-shadow: 0px -2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Table styles for data display */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+th, td {
+  text-align: left;
+  padding: 10px;
+  border: 1px solid #ddd;
+}
+
+th {
+  background-color: #f4f4f4;
+  color: #333;
+  font-weight: bold;
+}
+
+tbody tr:hover {
+  background-color: #f9f9f9;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+    height: auto;
+    position: relative;
+  }
+
+  .main-content {
+    margin-left: 0;
+    padding: 15px;
+  }
+
+  footer {
+    position: relative;
+  }
 }

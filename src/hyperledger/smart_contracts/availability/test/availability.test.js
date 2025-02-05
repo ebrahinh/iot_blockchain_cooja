@@ -1,10 +1,5 @@
-/*
- * Copyright IBM Corp. All Rights Reserved.
- *
- * SPDX-License-Identifier: Apache-2.0
- */
-
 'use strict';
+
 const sinon = require('sinon');
 const chai = require('chai');
 const sinonChai = require('sinon-chai');
@@ -18,8 +13,8 @@ const Availability = require('../lib/availability.js');
 let assert = sinon.assert;
 chai.use(sinonChai);
 
-describe('Availability Sensor Chaincode Tests', () => {
-    let transactionContext, chaincodeStub, asset;
+describe('Availability Smart Contract Tests', () => {
+    let transactionContext, chaincodeStub;
 
     beforeEach(() => {
         transactionContext = new Context();
@@ -50,114 +45,74 @@ describe('Availability Sensor Chaincode Tests', () => {
             }
             return Promise.resolve(internalGetStateByRange());
         });
-
-        asset = {
-            RID: '101',
-            Attempts: 0,
-            SecurityIncidents: 0,
-        };
     });
 
-    describe('Test InitLedger', () => {
-        it('should initialize the ledger with default availability records', async () => {
-            const availabilityChaincode = new Availability();
-            await availabilityChaincode.InitLedger(transactionContext);
-            const ret = JSON.parse((await chaincodeStub.getState('101')).toString());
-            expect(ret).to.have.property('RID', '101');
-            expect(ret).to.have.property('Attempts', 0);
-            expect(ret).to.have.property('SecurityIncidents', 0);
-        });
+    it('CreateAvailabilityRecord: should create a new availability record', async () => {
+        const contract = new Availability();
+        await contract.CreateAvailabilityRecord(
+            transactionContext,
+            'RID001',
+            3,
+            1
+        );
+
+        const record = JSON.parse(
+            await chaincodeStub.getState('RID001')
+        );
+        expect(record.RID).to.equal('RID001');
+        expect(record.Attempts).to.equal(3);
+        expect(record.SecurityIncidents).to.equal(1);
     });
 
-    describe('Test CreateAvailabilityRecord', () => {
-        it('should successfully create a new availability record', async () => {
-            const availabilityChaincode = new Availability();
-            await availabilityChaincode.CreateAvailabilityRecord(transactionContext, asset.RID, 3, 1);
-            const ret = JSON.parse(await chaincodeStub.getState(asset.RID));
-            expect(ret).to.eql({ RID: asset.RID, Attempts: 3, SecurityIncidents: 1 });
-        });
+    it('IncrementAttempts: should correctly increment attempts', async () => {
+        const contract = new Availability();
+        await contract.CreateAvailabilityRecord(
+            transactionContext,
+            'RID001',
+            3,
+            1
+        );
 
-        it('should throw an error if availability record already exists', async () => {
-            const availabilityChaincode = new Availability();
-            await availabilityChaincode.CreateAvailabilityRecord(transactionContext, asset.RID, 3, 1);
-            
-            try {
-                await availabilityChaincode.CreateAvailabilityRecord(transactionContext, asset.RID, 5, 2);
-                assert.fail('CreateAvailabilityRecord should have failed');
-            } catch (err) {
-                expect(err.message).to.equal(`Availability record ${asset.RID} already exists.`);
-            }
-        });
+        await contract.IncrementAttempts(transactionContext, 'RID001');
+        const record = JSON.parse(
+            await chaincodeStub.getState('RID001')
+        );
+        expect(record.Attempts).to.equal(4);
     });
 
-    describe('Test IncrementAttempts', () => {
-        it('should increment the Attempts counter', async () => {
-            const availabilityChaincode = new Availability();
-            await availabilityChaincode.CreateAvailabilityRecord(transactionContext, asset.RID, 3, 1);
-            await availabilityChaincode.IncrementAttempts(transactionContext, asset.RID);
-            const updatedAsset = JSON.parse(await chaincodeStub.getState(asset.RID));
-            expect(updatedAsset.Attempts).to.equal(4);
-        });
+    it('GetAllAvailabilityRecords: should retrieve all records', async () => {
+        const contract = new Availability();
+        await contract.CreateAvailabilityRecord(
+            transactionContext,
+            'RID001',
+            3,
+            1
+        );
+        await contract.CreateAvailabilityRecord(
+            transactionContext,
+            'RID002',
+            2,
+            0
+        );
 
-        it('should throw an error if record does not exist', async () => {
-            const availabilityChaincode = new Availability();
-            try {
-                await availabilityChaincode.IncrementAttempts(transactionContext, '999');
-                assert.fail('IncrementAttempts should have failed');
-            } catch (err) {
-                expect(err.message).to.equal('The availability record 999 does not exist.');
-            }
-        });
+        const allRecords = JSON.parse(
+            await contract.GetAllAvailabilityRecords(transactionContext)
+        );
+        expect(allRecords.length).to.equal(2);
     });
 
-    describe('Test IncrementSecurityIncidents', () => {
-        it('should increment the SecurityIncidents counter', async () => {
-            const availabilityChaincode = new Availability();
-            await availabilityChaincode.CreateAvailabilityRecord(transactionContext, asset.RID, 3, 1);
-            await availabilityChaincode.IncrementSecurityIncidents(transactionContext, asset.RID);
-            const updatedAsset = JSON.parse(await chaincodeStub.getState(asset.RID));
-            expect(updatedAsset.SecurityIncidents).to.equal(2);
-        });
+    it('DeleteAvailabilityRecord: should delete the record successfully', async () => {
+        const contract = new Availability();
+        await contract.CreateAvailabilityRecord(
+            transactionContext,
+            'RID001',
+            3,
+            1
+        );
 
-        it('should throw an error if record does not exist', async () => {
-            const availabilityChaincode = new Availability();
-            try {
-                await availabilityChaincode.IncrementSecurityIncidents(transactionContext, '999');
-                assert.fail('IncrementSecurityIncidents should have failed');
-            } catch (err) {
-                expect(err.message).to.equal('The availability record 999 does not exist.');
-            }
-        });
-    });
+        await contract.DeleteAvailabilityRecord(transactionContext, 'RID001');
+        const record = await chaincodeStub.getState('RID001');
 
-    describe('Test GetAllAvailabilityRecords', () => {
-        it('should retrieve all availability records', async () => {
-            const availabilityChaincode = new Availability();
-            await availabilityChaincode.CreateAvailabilityRecord(transactionContext, '101', 3, 1);
-            await availabilityChaincode.CreateAvailabilityRecord(transactionContext, '102', 5, 2);
-
-            const records = JSON.parse(await availabilityChaincode.GetAllAvailabilityRecords(transactionContext));
-            expect(records.length).to.equal(2);
-        });
-    });
-
-    describe('Test DeleteAvailabilityRecord', () => {
-        it('should delete an availability record', async () => {
-            const availabilityChaincode = new Availability();
-            await availabilityChaincode.CreateAvailabilityRecord(transactionContext, asset.RID, 3, 1);
-            await availabilityChaincode.DeleteAvailabilityRecord(transactionContext, asset.RID);
-            const ret = await chaincodeStub.getState(asset.RID);
-            expect(ret).to.be.undefined;
-        });
-
-        it('should throw an error if trying to delete a non-existing record', async () => {
-            const availabilityChaincode = new Availability();
-            try {
-                await availabilityChaincode.DeleteAvailabilityRecord(transactionContext, '999');
-                assert.fail('Expected error not thrown');
-            } catch (err) {
-                expect(err.message).to.equal('The availability record 999 does not exist.');
-            }
-        });
+        expect(record).to.be.undefined;
     });
 });

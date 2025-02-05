@@ -8,5 +8,6 @@
 
 const Mobility = require('./lib/mobility');
 
+// Export contract to align with Fabric runtime and project usage
 module.exports.Mobility = Mobility;
 module.exports.contracts = [Mobility];

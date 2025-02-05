@@ -10,8 +10,8 @@ const chai = require('chai');
 const sinonChai = require('sinon-chai');
 const expect = chai.expect;
 
-const { Context } = require('fabric-contract-api');
-const { ChaincodeStub } = require('fabric-shim');
+const {Context} = require('fabric-contract-api');
+const {ChaincodeStub} = require('fabric-shim');
 
 const Network = require('../lib/network.js');
 
@@ -35,29 +35,24 @@ describe('Network Chaincode Tests', () => {
         });
 
         chaincodeStub.getState.callsFake(async (key) => {
-            let ret;
-            if (chaincodeStub.states) {
-                ret = chaincodeStub.states[key];
-            }
-            return Promise.resolve(ret);
+            return chaincodeStub.states ? chaincodeStub.states[key] : undefined;
         });
 
         chaincodeStub.deleteState.callsFake(async (key) => {
             if (chaincodeStub.states) {
                 delete chaincodeStub.states[key];
             }
-            return Promise.resolve(key);
         });
 
         chaincodeStub.getStateByRange.callsFake(async () => {
             function* internalGetStateByRange() {
                 if (chaincodeStub.states) {
-                    const copied = Object.assign({}, chaincodeStub.states);
-                    for (let key in copied) {
-                        yield { value: copied[key] };
+                    for (const [key, value] of Object.entries(chaincodeStub.states)) {
+                        yield {key, value};
                     }
                 }
             }
+
             return Promise.resolve(internalGetStateByRange());
         });
 
@@ -74,8 +69,14 @@ describe('Network Chaincode Tests', () => {
         it('should initialize the ledger with predefined network assets', async () => {
             const network = new Network();
             await network.InitLedger(transactionContext);
-            const ret = JSON.parse((await chaincodeStub.getState('network1')).toString());
-            expect(ret).to.eql(Object.assign({ docType: 'network' }, asset));
+            const ret = JSON.parse((await chaincodeStub.getState('101')).toString());
+            expect(ret).to.eql({
+                RID: '101',
+                Latency: 10,
+                PacketLoss: 0.5,
+                Bandwidth: 50,
+                docType: 'network-sensor',
+            });
         });
     });
 
@@ -105,31 +106,25 @@ describe('Network Chaincode Tests', () => {
                 asset.OilPressure
             );
 
-            try {
-                await network.CreateAsset(
+            await expect(
+                network.CreateAsset(
                     transactionContext,
                     asset.ID,
                     asset.Temperature,
                     asset.Fuel,
                     asset.Coolant,
                     asset.OilPressure
-                );
-                assert.fail('CreateAsset should have failed');
-            } catch (err) {
-                expect(err.message).to.equal(`The asset ${asset.ID} already exists.`);
-            }
+                )
+            ).to.be.rejectedWith(`The asset ${asset.ID} already exists.`);
         });
     });
 
     describe('Test ReadNetworkAsset', () => {
         it('should return error on ReadAsset if asset does not exist', async () => {
             const network = new Network();
-            try {
-                await network.ReadAsset(transactionContext, 'nonExistentID');
-                assert.fail('ReadAsset should have failed');
-            } catch (err) {
-                expect(err.message).to.equal('The asset nonExistentID does not exist');
-            }
+            await expect(
+                network.ReadAsset(transactionContext, 'nonExistentID')
+            ).to.be.rejectedWith('The asset nonExistentID does not exist');
         });
 
         it('should return success on ReadAsset', async () => {
@@ -143,7 +138,7 @@ describe('Network Chaincode Tests', () => {
                 asset.OilPressure
             );
 
-            let ret = JSON.parse(await chaincodeStub.getState(asset.ID));
+            const ret = JSON.parse(await chaincodeStub.getState(asset.ID));
             expect(ret).to.eql(asset);
         });
     });
@@ -151,12 +146,9 @@ describe('Network Chaincode Tests', () => {
     describe('Test UpdateNetworkAsset', () => {
         it('should return error on UpdateAsset if asset does not exist', async () => {
             const network = new Network();
-            try {
-                await network.UpdateAsset(transactionContext, 'nonExistentID', 45, 90, 65, 30);
-                assert.fail('UpdateAsset should have failed');
-            } catch (err) {
-                expect(err.message).to.equal('The asset nonExistentID does not exist');
-            }
+            await expect(
+                network.UpdateAsset(transactionContext, 'nonExistentID', 45, 90, 65, 30)
+            ).to.be.rejectedWith('The asset nonExistentID does not exist');
         });
 
         it('should return success on UpdateAsset', async () => {
@@ -171,8 +163,8 @@ describe('Network Chaincode Tests', () => {
             );
 
             await network.UpdateAsset(transactionContext, asset.ID, 45, 90, 65, 30);
-            let ret = JSON.parse(await chaincodeStub.getState(asset.ID));
-            let expected = {
+            const ret = JSON.parse(await chaincodeStub.getState(asset.ID));
+            const expected = {
                 ID: 'network1',
                 Temperature: 45,
                 Fuel: 90,
@@ -186,12 +178,9 @@ describe('Network Chaincode Tests', () => {
     describe('Test DeleteNetworkAsset', () => {
         it('should return error on DeleteAsset if asset does not exist', async () => {
             const network = new Network();
-            try {
-                await network.DeleteAsset(transactionContext, 'nonExistentID');
-                assert.fail('DeleteAsset should have failed');
-            } catch (err) {
-                expect(err.message).to.equal('The asset nonExistentID does not exist');
-            }
+            await expect(
+                network.DeleteAsset(transactionContext, 'nonExistentID')
+            ).to.be.rejectedWith('The asset nonExistentID does not exist');
         });
 
         it('should return success on DeleteAsset', async () => {
@@ -206,7 +195,7 @@ describe('Network Chaincode Tests', () => {
             );
 
             await network.DeleteAsset(transactionContext, asset.ID);
-            let ret = await chaincodeStub.getState(asset.ID);
+            const ret = await chaincodeStub.getState(asset.ID);
             expect(ret).to.be.undefined;
         });
     });
@@ -218,7 +207,7 @@ describe('Network Chaincode Tests', () => {
             await network.CreateAsset(transactionContext, 'network2', 45, 90, 65, 30);
 
             const assets = JSON.parse(await network.GetAllAssets(transactionContext));
-            expect(assets.length).to.equal(2);
+            expect(assets).to.have.length(2);
         });
     });
 });

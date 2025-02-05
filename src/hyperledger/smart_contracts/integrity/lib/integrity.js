@@ -1,141 +1,160 @@
 'use strict';
 
-const stringify = require('json-stringify-deterministic');
-const sortKeysRecursive = require('sort-keys-recursive');
 const { Contract } = require('fabric-contract-api');
 
 class Integrity extends Contract {
-    async InitLedger(ctx) {  
-        const assets = [
-            { RID: '201', Attempts: 0, SecurityIncidents: 0 },
-            { RID: '202', Attempts: 0, SecurityIncidents: 0 },
-            { RID: '203', Attempts: 0, SecurityIncidents: 0 },
-            { RID: '204', Attempts: 0, SecurityIncidents: 0 },
-            { RID: '205', Attempts: 0, SecurityIncidents: 0 },
-            { RID: '206', Attempts: 0, SecurityIncidents: 0 },
+    /**
+     * Initialize the ledger with default sensor integrity records (for testing/demo purposes).
+     */
+    async InitLedger(ctx) {
+        console.info('Initializing the Integrity Ledger with default data');
+
+        const defaultIntegrityData = [
+            { RID: '201', Status: 'Operational', TamperIncidents: 0, IntegrityScore: 100 },
+            { RID: '202', Status: 'Compromised', TamperIncidents: 3, IntegrityScore: 70 },
         ];
 
-        for (const asset of assets) {
-            asset.docType = 'integrity-sensor';
-            await ctx.stub.putState(asset.RID, Buffer.from(stringify(sortKeysRecursive(asset))));
+        for (const record of defaultIntegrityData) {
+            await ctx.stub.putState(
+                record.RID,
+                Buffer.from(JSON.stringify(record))
+            );
         }
     }
 
-    async CreateIntegrityRecord(ctx, rid, attempts = 0, securityIncidents = 0) {
-        if (!rid || typeof rid !== 'string' || rid.length === 0) {
-            throw new Error('RID must be a non-empty string.');
-        }
-        if (isNaN(attempts) || attempts < 0) {
-            throw new Error('Attempts must be a non-negative number.');
-        }
-        if (isNaN(securityIncidents) || securityIncidents < 0) {
-            throw new Error('SecurityIncidents must be a non-negative number.');
-        }
-
-        const exists = await this.AssetExists(ctx, rid);
-        if (exists) {
-            throw new Error(`Integrity record ${rid} already exists.`);
+    /**
+     * Create a new integrity record for a sensor
+     * @param {Context} ctx - The Fabric transaction context
+     * @param {String} rid - Unique ID for the sensor
+     * @param {String} status - Current status of the sensor (e.g., "Operational", "Compromised")
+     * @param {Number} tamperIncidents - Count of tampering incidents observed
+     * @param {Number} integrityScore - Integrity score (0-100)
+     */
+    async CreateIntegrityRecord(ctx, rid, status, tamperIncidents, integrityScore) {
+        if (await this.recordExists(ctx, rid)) {
+            throw new Error(`Integrity record with RID ${rid} already exists`);
         }
 
-        const asset = { 
-            RID: rid, 
-            Attempts: parseInt(attempts), 
-            SecurityIncidents: parseInt(securityIncidents), 
-            docType: 'integrity-sensor' 
+        if (!rid || rid.trim() === '') {
+            throw new Error('RID (sensor ID) must be a non-empty string');
+        }
+
+        const newRecord = {
+            RID: rid,
+            Status: status || 'Unknown',
+            TamperIncidents: parseInt(tamperIncidents) || 0,
+            IntegrityScore: parseInt(integrityScore) || 100,
         };
 
-        await ctx.stub.putState(rid, Buffer.from(stringify(sortKeysRecursive(asset))));
-        return JSON.stringify(asset);
+        await ctx.stub.putState(rid, Buffer.from(JSON.stringify(newRecord)));
+
+        return JSON.stringify(newRecord);
     }
 
+    /**
+     * Retrieve a specific integrity record by RID
+     * @param {Context} ctx - The Fabric transaction context
+     * @param {String} rid - Unique sensor ID
+     */
     async ReadIntegrityRecord(ctx, rid) {
-        const assetJSON = await ctx.stub.getState(rid);
-        if (!assetJSON || assetJSON.length === 0) {
-            throw new Error(`Integrity record ${rid} does not exist.`);
+        const recordBytes = await ctx.stub.getState(rid);
+
+        if (!recordBytes || recordBytes.length === 0) {
+            throw new Error(`Integrity record with RID ${rid} does not exist`);
         }
-        return assetJSON.toString();
+
+        return recordBytes.toString();
     }
 
-    async IncrementAttempts(ctx, rid) {
-        const assetJSON = await this.ReadIntegrityRecord(ctx, rid);
-        const asset = JSON.parse(assetJSON);
+    /**
+     * Update the integrity score and/or status of a sensor
+     * @param {Context} ctx - The Fabric transaction context
+     * @param {String} rid - Unique sensor ID
+     * @param {String} status - Updated status
+     * @param {Number} integrityScore - Updated integrity score
+     */
+    async UpdateIntegrity(ctx, rid, status, integrityScore) {
+        const existingRecord = await this.getRecord(ctx, rid);
 
-        asset.Attempts += 1;
-        await ctx.stub.putState(rid, Buffer.from(stringify(sortKeysRecursive(asset))));
-        return JSON.stringify(asset);
+        existingRecord.Status = status || existingRecord.Status;
+        existingRecord.IntegrityScore = parseInt(integrityScore) || existingRecord.IntegrityScore;
+
+        await ctx.stub.putState(rid, Buffer.from(JSON.stringify(existingRecord)));
+
+        return JSON.stringify(existingRecord);
     }
 
-    async IncrementSecurityIncidents(ctx, rid) {
-        const assetJSON = await this.ReadIntegrityRecord(ctx, rid);
-        const asset = JSON.parse(assetJSON);
+    /**
+     * Increment Tamper Incidents for a given sensor
+     * @param {Context} ctx - The Fabric transaction context
+     * @param {String} rid - Unique sensor ID
+     */
+    async IncrementTamperIncidents(ctx, rid) {
+        const record = await this.getRecord(ctx, rid);
 
-        asset.SecurityIncidents += 1;
-        await ctx.stub.putState(rid, Buffer.from(stringify(sortKeysRecursive(asset))));
-        return JSON.stringify(asset);
+        record.TamperIncidents += 1;
+
+        // Decrement the integrity score by 10 points (if applicable)
+        record.IntegrityScore = Math.max(0, record.IntegrityScore - 10);
+
+        await ctx.stub.putState(rid, Buffer.from(JSON.stringify(record)));
+
+        return JSON.stringify(record);
     }
 
-    async UpdateIntegrityRecord(ctx, rid, attempts, securityIncidents) {
-        if (!rid || typeof rid !== 'string' || rid.length === 0) {
-            throw new Error('RID must be a non-empty string.');
-        }
-        if (isNaN(attempts) || attempts < 0) {
-            throw new Error('Attempts must be a non-negative number.');
-        }
-        if (isNaN(securityIncidents) || securityIncidents < 0) {
-            throw new Error('SecurityIncidents must be a non-negative number.');
-        }
-
-        const exists = await this.AssetExists(ctx, rid);
-        if (!exists) {
-            throw new Error(`Integrity record ${rid} does not exist.`);
-        }
-
-        const updatedAsset = { 
-            RID: rid, 
-            Attempts: parseInt(attempts), 
-            SecurityIncidents: parseInt(securityIncidents), 
-            docType: 'integrity-sensor' 
-        };
-
-        await ctx.stub.putState(rid, Buffer.from(stringify(sortKeysRecursive(updatedAsset))));
-        return JSON.stringify(updatedAsset);
-    }
-
+    /**
+     * Delete a specific integrity record from the ledger
+     * @param {Context} ctx - The Fabric transaction context
+     * @param {String} rid - Unique sensor ID
+     */
     async DeleteIntegrityRecord(ctx, rid) {
-        const exists = await this.AssetExists(ctx, rid);
-        if (!exists) {
-            throw new Error(`Integrity record ${rid} does not exist.`);
+        if (!(await this.recordExists(ctx, rid))) {
+            throw new Error(`Integrity record with RID ${rid} does not exist`);
         }
+
         await ctx.stub.deleteState(rid);
+
+        return `Integrity record ${rid} successfully deleted`;
     }
 
-    async AssetExists(ctx, rid) {
-        const assetJSON = await ctx.stub.getState(rid);
-        return assetJSON && assetJSON.length > 0;
-    }
-
+    /**
+     * Retrieve all integrity records from the ledger
+     * @param {Context} ctx - The Fabric transaction context
+     */
     async GetAllIntegrityRecords(ctx) {
-        return this._getAllRecords(ctx, 'integrity-sensor');
+        const iterator = await ctx.stub.getStateByRange('', '');
+        const results = [];
+
+        for await (const record of iterator) {
+            results.push(JSON.parse(record.value.toString()));
+        }
+
+        return JSON.stringify(results);
     }
 
-    async _getAllRecords(ctx, sensorType) {
-        const allResults = [];
-        const startKey = sensorType + '~';
-        const endKey = sensorType + '~' + String.fromCharCode(1111111);
+    /**
+     * Utility: Check if a record exists
+     * @param {Context} ctx - The Fabric transaction context
+     * @param {String} rid - Unique sensor ID
+     */
+    async recordExists(ctx, rid) {
+        const recordBytes = await ctx.stub.getState(rid);
+        return recordBytes && recordBytes.length > 0;
+    }
 
-        const iterator = await ctx.stub.getStateByRange(startKey, endKey);
-        let result = await iterator.next();
+    /**
+     * Utility: Get a record and parse it
+     * @param {Context} ctx - The Fabric transaction context
+     * @param {String} rid - Unique sensor ID
+     */
+    async getRecord(ctx, rid) {
+        const recordBytes = await ctx.stub.getState(rid);
 
-        while (!result.done) {
-            const strValue = Buffer.from(result.value.value.toString()).toString('utf8');
-            try {
-                allResults.push(JSON.parse(strValue));
-            } catch (err) {
-                console.error(err);
-            }
-            result = await iterator.next();
+        if (!recordBytes || recordBytes.length === 0) {
+            throw new Error(`Integrity record with RID ${rid} does not exist`);
         }
-        return JSON.stringify(allResults);
+
+        return JSON.parse(recordBytes.toString());
     }
 }
 

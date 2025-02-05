@@ -5,13 +5,14 @@
  */
 
 'use strict';
+
 const sinon = require('sinon');
 const chai = require('chai');
 const sinonChai = require('sinon-chai');
 const expect = chai.expect;
 
-const { Context } = require('fabric-contract-api');
-const { ChaincodeStub } = require('fabric-shim');
+const {Context} = require('fabric-contract-api');
+const {ChaincodeStub} = require('fabric-shim');
 
 const Security = require('../lib/security.js');
 
@@ -35,30 +36,26 @@ describe('Security Chaincode Tests', () => {
         });
 
         chaincodeStub.getState.callsFake(async (key) => {
-            let ret;
-            if (chaincodeStub.states) {
-                ret = chaincodeStub.states[key];
-            }
-            return Promise.resolve(ret);
+            return Promise.resolve(chaincodeStub.states ? chaincodeStub.states[key] : undefined);
         });
 
         chaincodeStub.deleteState.callsFake(async (key) => {
             if (chaincodeStub.states) {
                 delete chaincodeStub.states[key];
             }
-            return Promise.resolve(key);
+            return Promise.resolve();
         });
 
         chaincodeStub.getStateByRange.callsFake(async () => {
-            function* internalGetStateByRange() {
+            async function* internalGetStateByRange() {
                 if (chaincodeStub.states) {
-                    const copied = Object.assign({}, chaincodeStub.states);
-                    for (let key in copied) {
-                        yield { value: copied[key] };
+                    for (const key of Object.keys(chaincodeStub.states).sort()) {
+                        yield {key, value: chaincodeStub.states[key]};
                     }
                 }
             }
-            return Promise.resolve(internalGetStateByRange());
+
+            return internalGetStateByRange();
         });
 
         asset = {
@@ -74,40 +71,25 @@ describe('Security Chaincode Tests', () => {
             const security = new Security();
             await security.InitLedger(transactionContext);
             const ret = JSON.parse((await chaincodeStub.getState('security1')).toString());
-            expect(ret).to.eql(Object.assign({ docType: 'security' }, asset));
+            expect(ret).to.eql({ID: 'security1', Xco: 11, Yco: 5, Speed: 23, docType: 'security'});
         });
     });
 
     describe('Test CreateSecurityAsset', () => {
         it('should create a new security asset', async () => {
             const security = new Security();
-            await security.CreateSecurityAsset(
-                transactionContext,
-                asset.ID,
-                asset.SecurityLevel
-            );
+            await security.CreateSecurityAsset(transactionContext, asset.ID, asset.SecurityLevel);
             const ret = JSON.parse((await chaincodeStub.getState(asset.ID)).toString());
-            expect(ret).to.eql(Object.assign({}, asset, { BreachAttempts: 0, AlertsTriggered: 0 }));
+            expect(ret).to.eql(asset);
         });
 
         it('should throw an error if asset already exists', async () => {
             const security = new Security();
-            await security.CreateSecurityAsset(
-                transactionContext,
-                asset.ID,
-                asset.SecurityLevel
-            );
+            await security.CreateSecurityAsset(transactionContext, asset.ID, asset.SecurityLevel);
 
-            try {
-                await security.CreateSecurityAsset(
-                    transactionContext,
-                    asset.ID,
-                    asset.SecurityLevel
-                );
-                assert.fail('CreateSecurityAsset should have failed');
-            } catch (err) {
-                expect(err.message).to.equal(`The security asset ${asset.ID} already exists.`);
-            }
+            await expect(
+                security.CreateSecurityAsset(transactionContext, asset.ID, asset.SecurityLevel)
+            ).to.be.rejectedWith(`The security asset ${asset.ID} already exists.`);
         });
     });
 
@@ -140,7 +122,10 @@ describe('Security Chaincode Tests', () => {
             await security.CreateSecurityAsset(transactionContext, 'security2', 'Medium');
 
             const assets = JSON.parse(await security.GetAllSecurityAssets(transactionContext));
-            expect(assets.length).to.equal(2);
+            expect(assets).to.deep.include.members([
+                {ID: 'security1', SecurityLevel: 'High', BreachAttempts: 0, AlertsTriggered: 0},
+                {ID: 'security2', SecurityLevel: 'Medium', BreachAttempts: 0, AlertsTriggered: 0},
+            ]);
         });
     });
 

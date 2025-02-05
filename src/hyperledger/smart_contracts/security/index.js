@@ -8,5 +8,7 @@
 
 const Security = require('./lib/security');
 
-module.exports.Security = Security;
-module.exports.contracts = [Security];
+module.exports = {
+    Security,
+    contracts: [Security]
+};

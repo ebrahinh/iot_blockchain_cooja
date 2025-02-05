@@ -140,7 +140,7 @@ fi
 # Kill any existing backend process before restarting
 pkill -f "node index.js" || true
 
-node index.js &
+node api.routes.js &
 
 sleep 5
 

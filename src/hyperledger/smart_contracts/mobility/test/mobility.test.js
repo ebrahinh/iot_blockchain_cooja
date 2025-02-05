@@ -9,24 +9,23 @@
 const sinon = require('sinon');
 const chai = require('chai');
 const sinonChai = require('sinon-chai');
-const expect = chai.expect;
+const { expect } = chai;
+chai.use(sinonChai);
 
 const { Context } = require('fabric-contract-api');
 const { ChaincodeStub } = require('fabric-shim');
+const Mobility = require('../lib/mobility.js'); // The Mobility smart contract
 
-const Mobility = require('../lib/mobility.js');
-
-let assert = sinon.assert;
-chai.use(sinonChai);
-
-describe('Mobility Chaincode Tests', () => {
-    let transactionContext, chaincodeStub, asset;
+describe('Mobility Chaincode Unit Tests', () => {
+    let transactionContext, chaincodeStub, testAsset;
 
     beforeEach(() => {
+        // Setup transaction context and stub
         transactionContext = new Context();
         chaincodeStub = sinon.createStubInstance(ChaincodeStub);
         transactionContext.setChaincodeStub(chaincodeStub);
 
+        // Fake states for testing in stub
         chaincodeStub.putState.callsFake((key, value) => {
             if (!chaincodeStub.states) chaincodeStub.states = {};
             chaincodeStub.states[key] = value;
@@ -52,113 +51,219 @@ describe('Mobility Chaincode Tests', () => {
             return Promise.resolve(internalGetStateByRange());
         });
 
-        asset = {
-            ID: 'mobility1',
-            Speed: 10,
-            Acceleration: 2.5,
-            Deceleration: 1.2
+        // Example test asset initialized
+        testAsset = {
+            RID: 'test1',
+            Location: 'Test Zone',
+            GeoFence: 'Restricted',
+            Attempts: 0,
+            SecurityIncidents: 0,
         };
     });
 
-    describe('Test InitLedger', () => {
-        it('should initialize the ledger with default mobility data', async () => {
-            let mobilityChaincode = new Mobility();
-            await mobilityChaincode.InitLedger(transactionContext);
-            let ret = JSON.parse((await chaincodeStub.getState('mobility1')).toString());
-            expect(ret).to.have.property('ID', 'mobility1');
-            expect(ret).to.have.property('Speed');
+    describe('Initialize Mobility Ledger (InitLedger)', () => {
+        it('should set up the mobility ledger with default records', async () => {
+            const mobility = new Mobility();
+            await mobility.InitLedger(transactionContext);
+            const assetBytes = await chaincodeStub.getState('301');
+            const asset = JSON.parse(assetBytes.toString());
+            expect(asset).to.have.property('RID', '301');
+            expect(asset).to.have.property('GeoFence', 'Restricted');
         });
     });
 
-    describe('Test CreateMobilityRecord', () => {
-        it('should successfully create a mobility record', async () => {
-            let mobilityChaincode = new Mobility();
-            await mobilityChaincode.CreateMobilityRecord(transactionContext, asset.ID, asset.Speed, asset.Acceleration, asset.Deceleration);
-            let ret = JSON.parse(await chaincodeStub.getState(asset.ID));
-            expect(ret).to.eql(asset);
+    describe('CreateMobility', () => {
+        it('should successfully create a new mobility record', async () => {
+            const mobility = new Mobility();
+            const result = await mobility.CreateMobility(
+                transactionContext,
+                testAsset.RID,
+                testAsset.Location,
+                testAsset.GeoFence,
+                testAsset.Attempts,
+                testAsset.SecurityIncidents
+            );
+            const asset = JSON.parse(result);
+            expect(asset).to.eql(testAsset);
+
+            const storedAsset = JSON.parse(await chaincodeStub.getState(testAsset.RID));
+            expect(storedAsset).to.eql(testAsset);
         });
 
-        it('should throw an error if the mobility record already exists', async () => {
-            let mobilityChaincode = new Mobility();
-            await mobilityChaincode.CreateMobilityRecord(transactionContext, asset.ID, asset.Speed, asset.Acceleration, asset.Deceleration);
+        it('should fail to create a duplicate mobility record', async () => {
+            const mobility = new Mobility();
+            await mobility.CreateMobility(
+                transactionContext,
+                testAsset.RID,
+                testAsset.Location,
+                testAsset.GeoFence,
+                testAsset.Attempts,
+                testAsset.SecurityIncidents
+            );
             try {
-                await mobilityChaincode.CreateMobilityRecord(transactionContext, asset.ID, asset.Speed, asset.Acceleration, asset.Deceleration);
-                assert.fail('Expected error not thrown');
+                await mobility.CreateMobility(
+                    transactionContext,
+                    testAsset.RID,
+                    testAsset.Location,
+                    testAsset.GeoFence,
+                    testAsset.Attempts,
+                    testAsset.SecurityIncidents
+                );
+                chai.assert.fail('Expected error not thrown');
             } catch (err) {
-                expect(err.message).to.equal(`The mobility record ${asset.ID} already exists.`);
+                expect(err.message).to.equal(`Mobility record ${testAsset.RID} already exists.`);
             }
         });
     });
 
-    describe('Test ReadMobilityRecord', () => {
-        it('should retrieve an existing mobility record', async () => {
-            let mobilityChaincode = new Mobility();
-            await mobilityChaincode.CreateMobilityRecord(transactionContext, asset.ID, asset.Speed, asset.Acceleration, asset.Deceleration);
-            let ret = JSON.parse(await mobilityChaincode.ReadMobilityRecord(transactionContext, asset.ID));
-            expect(ret).to.eql(asset);
+    describe('ReadMobility', () => {
+        it('should correctly retrieve an existing record', async () => {
+            const mobility = new Mobility();
+            await mobility.CreateMobility(
+                transactionContext,
+                testAsset.RID,
+                testAsset.Location,
+                testAsset.GeoFence,
+                testAsset.Attempts,
+                testAsset.SecurityIncidents
+            );
+            const result = await mobility.ReadMobility(transactionContext, testAsset.RID);
+            const asset = JSON.parse(result);
+            expect(asset).to.eql(testAsset);
         });
 
-        it('should throw an error if the record does not exist', async () => {
-            let mobilityChaincode = new Mobility();
+        it('should fail to retrieve a non-existent record', async () => {
+            const mobility = new Mobility();
             try {
-                await mobilityChaincode.ReadMobilityRecord(transactionContext, 'unknown_id');
-                assert.fail('Expected error not thrown');
+                await mobility.ReadMobility(transactionContext, 'unknown_record');
+                chai.assert.fail('Expected error not thrown');
             } catch (err) {
-                expect(err.message).to.equal('The mobility record unknown_id does not exist.');
+                expect(err.message).to.equal('Mobility record unknown_record does not exist.');
             }
         });
     });
 
-    describe('Test UpdateMobilityRecord', () => {
-        it('should update an existing mobility record', async () => {
-            let mobilityChaincode = new Mobility();
-            await mobilityChaincode.CreateMobilityRecord(transactionContext, asset.ID, asset.Speed, asset.Acceleration, asset.Deceleration);
+    describe('UpdateMobility', () => {
+        it('should correctly update an existing mobility record', async () => {
+            const mobility = new Mobility();
+            await mobility.CreateMobility(
+                transactionContext,
+                testAsset.RID,
+                testAsset.Location,
+                testAsset.GeoFence,
+                testAsset.Attempts,
+                testAsset.SecurityIncidents
+            );
 
-            await mobilityChaincode.UpdateMobilityRecord(transactionContext, asset.ID, 15, 3.0, 1.5);
-            let ret = JSON.parse(await chaincodeStub.getState(asset.ID));
-            expect(ret).to.eql({ ID: asset.ID, Speed: 15, Acceleration: 3.0, Deceleration: 1.5 });
+            const updatedLoc = 'Updated Zone';
+            const updatedGeoFence = 'Allowed';
+            const updatedAttempts = 5;
+            const updatedSecurityIncidents = 2;
+
+            const updatedResult = await mobility.UpdateMobility(
+                transactionContext,
+                testAsset.RID,
+                updatedLoc,
+                updatedGeoFence,
+                updatedAttempts,
+                updatedSecurityIncidents
+            );
+            const updatedAsset = JSON.parse(updatedResult);
+
+            expect(updatedAsset).to.eql({
+                RID: testAsset.RID,
+                Location: updatedLoc,
+                GeoFence: updatedGeoFence,
+                Attempts: updatedAttempts,
+                SecurityIncidents: updatedSecurityIncidents,
+                docType: 'mobility',
+            });
         });
 
-        it('should throw an error if trying to update a non-existing record', async () => {
-            let mobilityChaincode = new Mobility();
+        it('should fail to update a non-existent mobility record', async () => {
+            const mobility = new Mobility();
             try {
-                await mobilityChaincode.UpdateMobilityRecord(transactionContext, 'unknown_id', 15, 3.0, 1.5);
-                assert.fail('Expected error not thrown');
+                await mobility.UpdateMobility(transactionContext, 'unknown_record', 'New Zone', 'Restricted', 1, 1);
+                chai.assert.fail('Expected error not thrown');
             } catch (err) {
-                expect(err.message).to.equal('The mobility record unknown_id does not exist.');
+                expect(err.message).to.equal('Mobility record unknown_record does not exist.');
             }
         });
     });
 
-    describe('Test DeleteMobilityRecord', () => {
+    describe('IncrementAttempts', () => {
+        it('should correctly increment Attempts on a mobility record', async () => {
+            const mobility = new Mobility();
+            await mobility.CreateMobility(
+                transactionContext,
+                testAsset.RID,
+                testAsset.Location,
+                testAsset.GeoFence,
+                testAsset.Attempts,
+                testAsset.SecurityIncidents
+            );
+
+            await mobility.IncrementAttempts(transactionContext, testAsset.RID);
+            const record = JSON.parse(await chaincodeStub.getState(testAsset.RID));
+            expect(record.Attempts).to.equal(1);
+        });
+    });
+
+    describe('IncrementSecurityIncidents', () => {
+        it('should correctly increment SecurityIncidents on a mobility record', async () => {
+            const mobility = new Mobility();
+            await mobility.CreateMobility(
+                transactionContext,
+                testAsset.RID,
+                testAsset.Location,
+                testAsset.GeoFence,
+                testAsset.Attempts,
+                testAsset.SecurityIncidents
+            );
+
+            await mobility.IncrementSecurityIncidents(transactionContext, testAsset.RID);
+            const record = JSON.parse(await chaincodeStub.getState(testAsset.RID));
+            expect(record.SecurityIncidents).to.equal(1);
+        });
+    });
+
+    describe('DeleteMobility', () => {
         it('should delete an existing mobility record', async () => {
-            let mobilityChaincode = new Mobility();
-            await mobilityChaincode.CreateMobilityRecord(transactionContext, asset.ID, asset.Speed, asset.Acceleration, asset.Deceleration);
-            await mobilityChaincode.DeleteMobilityRecord(transactionContext, asset.ID);
-            let ret = await chaincodeStub.getState(asset.ID);
-            expect(ret).to.be.undefined;
+            const mobility = new Mobility();
+            await mobility.CreateMobility(
+                transactionContext,
+                testAsset.RID,
+                testAsset.Location,
+                testAsset.GeoFence,
+                testAsset.Attempts,
+                testAsset.SecurityIncidents
+            );
+
+            await mobility.DeleteMobility(transactionContext, testAsset.RID);
+            const record = await chaincodeStub.getState(testAsset.RID);
+            expect(record).to.be.undefined;
         });
 
-        it('should throw an error if trying to delete a non-existing record', async () => {
-            let mobilityChaincode = new Mobility();
+        it('should fail to delete a non-existent mobility record', async () => {
+            const mobility = new Mobility();
             try {
-                await mobilityChaincode.DeleteMobilityRecord(transactionContext, 'unknown_id');
-                assert.fail('Expected error not thrown');
+                await mobility.DeleteMobility(transactionContext, 'unknown_record');
+                chai.assert.fail('Expected error not thrown');
             } catch (err) {
-                expect(err.message).to.equal('The mobility record unknown_id does not exist.');
+                expect(err.message).to.equal('Mobility record unknown_record does not exist.');
             }
         });
     });
 
-    describe('Test GetAllMobilityRecords', () => {
-        it('should retrieve all mobility records', async () => {
-            let mobilityChaincode = new Mobility();
-            await mobilityChaincode.CreateMobilityRecord(transactionContext, 'mobility1', 20, 2.0, 1.0);
-            await mobilityChaincode.CreateMobilityRecord(transactionContext, 'mobility2', 25, 2.5, 1.2);
+    describe('GetAllMobility', () => {
+        it('should retrieve all existing mobility records', async () => {
+            const mobility = new Mobility();
+            await mobility.CreateMobility(transactionContext, '301', 'Zone A', 'Restricted', 0, 0);
+            await mobility.CreateMobility(transactionContext, '302', 'Zone B', 'Allowed', 1, 0);
 
-            let ret = await mobilityChaincode.GetAllMobilityRecords(transactionContext);
-            ret = JSON.parse(ret);
-            expect(ret.length).to.equal(2);
+            const result = await mobility.GetAllMobility(transactionContext);
+            const allRecords = JSON.parse(result);
+            expect(allRecords.length).to.equal(2);
         });
     });
 });

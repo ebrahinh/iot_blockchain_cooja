@@ -1,41 +1,42 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import './index.css';
+import './index.css'; // Global CSS styling
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 
+// Render the root React application
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
-  // <React.StrictMode>
-  <App />
-  // </React.StrictMode>
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>
 );
 
-// Function to measure project performance based on attempts
+// Function to measure project performance and log metrics
 const measureProjectPerformance = () => {
   console.log('--- IoT Security Project Performance Metrics ---');
 
   const performanceData = {
-    attempts: 150, // Total attempts made
-    devicesSecured: 120, // Number of devices secured
-    securityIncidents: 20, // Security incidents that occurred
-    breachesPrevented: 15, // Breaches that were successfully prevented
-    successRate: null, // Success rate of securing devices
-    preventionRate: null, // Rate of breach prevention
+    attempts: 150,          // Total login/sign-in attempts
+    devicesSecured: 120,    // Number of IoT devices that were successfully secured
+    securityIncidents: 20,  // Number of security incidents reported
+    breachesPrevented: 15,  // Number of attempted breaches successfully blocked
+    successRate: 0,         // Calculated success rate (Placeholder, calculated below)
+    preventionRate: 0,      // Calculated breach prevention rate (Placeholder, calculated below)
   };
 
-  // Calculate success and prevention rates
+  // Calculate success rate and prevention rate
   performanceData.successRate = (
-    (performanceData.devicesSecured / performanceData.attempts) *
-    100
-  ).toFixed(2);
+      (performanceData.devicesSecured / performanceData.attempts) *
+      100
+  ).toFixed(2); // Keep up to two decimal places
 
   performanceData.preventionRate = (
-    (performanceData.breachesPrevented / performanceData.attempts) *
-    100
+      (performanceData.breachesPrevented / performanceData.attempts) *
+      100
   ).toFixed(2);
 
-  // Log metrics to the console
+  // Log the performance data neatly for debugging or reporting
   console.log(`Total Attempts: ${performanceData.attempts}`);
   console.log(`Devices Secured: ${performanceData.devicesSecured}`);
   console.log(`Security Incidents: ${performanceData.securityIncidents}`);
@@ -49,5 +50,6 @@ const measureProjectPerformance = () => {
 // Run the performance measurement function
 measureProjectPerformance();
 
-// Pass a function to log results or send to an analytics endpoint
+// Optional: Report web vitals for monitoring app performance
+// You can call this method with a callback function to log analytics to an endpoint or monitor performance
 reportWebVitals(console.log);

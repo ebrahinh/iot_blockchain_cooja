@@ -96,7 +96,7 @@ cd backend
 2.	Install dependencies and start the backend API
 
 npm install
-node index.js
+node api.routes.js
 3.	If any dependencies are missing, install manually:
 
 npm i <package-name>

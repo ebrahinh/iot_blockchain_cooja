@@ -2,25 +2,24 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import "./App.css";
 
-// Sidebar and Components
-import Sidebar from "./side_bar";
-import BarChart from "./bar";
-import LineChart from "./line";
-import ChartComponent from "./chart";
-import ScatterChart from "./scatter"; // ✅ Added ScatterChart Import
+// Sidebar Component
+import Sidebar from "./components/Sidebar/Sidebar";
 
-// Modules
-import Module1 from "./module1";
-import Module2 from "./module2";
-import Module3 from "./module3";
-import Module4 from "./module4";
-import Module5 from "./module5";
+// Charts & Modules
+import BarChart from "./components/Charts/BarChart";
+import LineChart from "./components/Charts/LineChart";
+import ScatterChart from "./components/Charts/ScatterChart";
 
-// Data source
-import Data from "./data";
+// Pages/Modules
+import Dashboard from "./pages/Dashboard";
+import Sensors from "./pages/Sensors";
+import Blockchain from "./pages/Blockchain";
+
+// Data for Charts
+import Data from "./data/data";
 
 function App() {
-  // ✅ Bar Chart Data
+  // Bar Chart Data Placeholder
   const barChartData = {
     labels: Data.map((entry) => `Attempt ${entry.attempt}`),
     datasets: [
@@ -34,7 +33,7 @@ function App() {
     ],
   };
 
-  // ✅ Line Chart Data
+  // Line Chart Data Placeholder
   const lineChartData = {
     labels: Data.map((entry) => `Attempt ${entry.attempt}`),
     datasets: [
@@ -49,62 +48,74 @@ function App() {
   };
 
   return (
-    <Router>
-      <div className="App">
-        {/* Sidebar Navigation */}
-        <Sidebar />
+      <Router>
+        <div className="App">
+          {/* Sidebar for Navigation */}
+          <Sidebar />
 
-        {/* App Routes */}
-        <Routes>
-          {/* Default Dashboard Route */}
-          <Route
-            path="/"
-            element={
-              <div>
-                <h1>IoT Security Dashboard</h1>
-                <ChartComponent />
-              </div>
-            }
-          />
-          {/* Bar Chart Route */}
-          <Route
-            path="/bar"
-            element={
-              <div>
-                <h1>Bar Chart: Devices Secured</h1>
-                <BarChart chartData={barChartData} title="Devices Secured Per Attempt" />
-              </div>
-            }
-          />
-          {/* Line Chart Route */}
-          <Route
-            path="/line"
-            element={
-              <div>
-                <h1>Line Chart: Security Incidents</h1>
-                <LineChart chartData={lineChartData} title="Security Incidents Per Attempt" />
-              </div>
-            }
-          />
-          {/* Scatter Chart Route ✅ Added */}
-          <Route
-            path="/scatter"
-            element={
-              <div>
-                <h1>Scatter Chart: IoT Device Locations</h1>
-                <ScatterChart />
-              </div>
-            }
-          />
-          {/* Module Routes */}
-          <Route path="/module1" element={<Module1 />} />
-          <Route path="/module2" element={<Module2 />} />
-          <Route path="/module3" element={<Module3 />} />
-          <Route path="/module4" element={<Module4 />} />
-          <Route path="/module5" element={<Module5 />} />
-        </Routes>
-      </div>
-    </Router>
+          {/* Main App Routes */}
+          <Routes>
+            {/* Default Route */}
+            <Route
+                path="/"
+                element={
+                  <Dashboard />
+                }
+            />
+
+            {/* Bar Chart Route */}
+            <Route
+                path="/bar"
+                element={
+                  <div className="content-wrapper">
+                    <h1>Bar Chart: Devices Secured</h1>
+                    <BarChart chartData={barChartData} title="Devices Secured Per Attempt" />
+                  </div>
+                }
+            />
+
+            {/* Line Chart Route */}
+            <Route
+                path="/line"
+                element={
+                  <div className="content-wrapper">
+                    <h1>Line Chart: Security Incidents</h1>
+                    <LineChart chartData={lineChartData} title="Security Incidents Per Attempt" />
+                  </div>
+                }
+            />
+
+            {/* Scatter Chart Route */}
+            <Route
+                path="/scatter"
+                element={
+                  <div className="content-wrapper">
+                    <h1>Scatter Chart: IoT Device Locations</h1>
+                    <ScatterChart />
+                  </div>
+                }
+            />
+
+            {/* Sensors Module */}
+            <Route
+                path="/sensors"
+                element={
+                  <Sensors />
+                }
+            />
+
+            {/* Blockchain Module */}
+            <Route
+                path="/blockchain"
+                element={
+                  <Blockchain />
+                }
+            />
+
+            {/* Add more dynamic routes as needed */}
+          </Routes>
+        </div>
+      </Router>
   );
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright IBM Corp. All Rights Reserved.
+ * Copyright IBM Corp.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,33 +12,13 @@ const sortKeysRecursive = require('sort-keys-recursive');
 const { Contract } = require('fabric-contract-api');
 
 class Network extends Contract {
-
+    // Initialize the network ledger with default records
     async InitLedger(ctx) {
         const networkRecords = [
-            {
-                RID: '101',
-                Latency: 10,
-                PacketLoss: 0.5,
-                Bandwidth: 50,
-            },
-            {
-                RID: '102',
-                Latency: 15,
-                PacketLoss: 0.3,
-                Bandwidth: 60,
-            },
-            {
-                RID: '103',
-                Latency: 8,
-                PacketLoss: 0.1,
-                Bandwidth: 75,
-            },
-            {
-                RID: '104',
-                Latency: 20,
-                PacketLoss: 0.8,
-                Bandwidth: 40,
-            },
+            { RID: '101', Latency: 10, PacketLoss: 0.5, Bandwidth: 50 },
+            { RID: '102', Latency: 15, PacketLoss: 0.3, Bandwidth: 60 },
+            { RID: '103', Latency: 8, PacketLoss: 0.1, Bandwidth: 75 },
+            { RID: '104', Latency: 20, PacketLoss: 0.8, Bandwidth: 40 },
         ];
 
         for (const record of networkRecords) {
@@ -53,7 +33,6 @@ class Network extends Contract {
         if (exists) {
             throw new Error(`Network record ${rid} already exists.`);
         }
-
         const record = {
             RID: rid,
             Latency: parseFloat(latency),
@@ -61,12 +40,11 @@ class Network extends Contract {
             Bandwidth: parseInt(bandwidth),
             docType: 'network-sensor',
         };
-
         await ctx.stub.putState(rid, Buffer.from(stringify(sortKeysRecursive(record))));
         return JSON.stringify(record);
     }
 
-    // Read a network performance record
+    // Retrieve a network record
     async ReadNetworkRecord(ctx, rid) {
         const recordJSON = await ctx.stub.getState(rid);
         if (!recordJSON || recordJSON.length === 0) {
@@ -81,7 +59,6 @@ class Network extends Contract {
         if (!exists) {
             throw new Error(`Network record ${rid} does not exist.`);
         }
-
         const updatedRecord = {
             RID: rid,
             Latency: parseFloat(latency),
@@ -89,7 +66,6 @@ class Network extends Contract {
             Bandwidth: parseInt(bandwidth),
             docType: 'network-sensor',
         };
-
         await ctx.stub.putState(rid, Buffer.from(stringify(sortKeysRecursive(updatedRecord))));
         return JSON.stringify(updatedRecord);
     }
@@ -103,27 +79,24 @@ class Network extends Contract {
         await ctx.stub.deleteState(rid);
     }
 
-    // Check if a record exists
+    // Check if a network record exists
     async RecordExists(ctx, rid) {
         const recordJSON = await ctx.stub.getState(rid);
         return recordJSON && recordJSON.length > 0;
     }
 
-    // Retrieve all network records
+    // Retrieve all network performance records
     async GetAllNetworkRecords(ctx) {
-        const allResults = [];
         const iterator = await ctx.stub.getStateByRange('', '');
-        let result = await iterator.next();
-
-        while (!result.done) {
-            const strValue = Buffer.from(result.value.value.toString()).toString('utf8');
+        const allResults = [];
+        for await (const res of iterator) {
+            const strValue = Buffer.from(res.value).toString('utf8');
             try {
                 const record = JSON.parse(strValue);
                 allResults.push(record);
             } catch (err) {
                 console.error(err);
             }
-            result = await iterator.next();
         }
         return JSON.stringify(allResults);
     }
